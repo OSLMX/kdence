@@ -1,0 +1,2423 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#16161a">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
+<script>window.PWA = true;</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kdence</title>
+<link rel="icon" type="image/png" href="icones/icone-96.png">
+<script src="lib/jszip.min.js"></script>
+<script src="lib/mammoth.browser.min.js"></script>
+<script src="lib/pdf.min.js"></script>
+<style>
+/* Police de lecture : EB Garamond (licence SIL OFL, lib/LICENCE-eb-garamond.txt), intégrée pour un rendu identique
+   sur l'ordinateur et le téléphone, même hors connexion. */
+@font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400; font-display: block; src: url(lib/eb-garamond-400.woff2) format("woff2"); }
+@font-face { font-family: "EB Garamond"; font-style: italic; font-weight: 400; font-display: block; src: url(lib/eb-garamond-400-italique.woff2) format("woff2"); }
+@font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 600; font-display: block; src: url(lib/eb-garamond-600.woff2) format("woff2"); }
+:root {
+  --police-lecture: "EB Garamond", Garamond, Georgia, serif;
+  --hauteur-x: 0.46;   /* lettres minuscules aussi hautes qu'avec l'ancienne police : les tailles réglées gardent leur rendu */
+  --fond: #f6f3ec; --fond2: #ece7dc; --texte: #22201c; --doux: #7a746a; --trait: #d8d1c2;
+  --accent: #c0392b; --surligne: #f4d58d; --bouton: #2c2a26; --bouton-texte: #f6f3ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #16161a; --fond2: #222228; --texte: #e9e6df; --doux: #8d8a84; --trait: #34343c;
+    --accent: #ff6b5b; --surligne: #5b4a1c; --bouton: #e9e6df; --bouton-texte: #16161a;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #16161a; --fond2: #222228; --texte: #e9e6df; --doux: #8d8a84; --trait: #34343c;
+  --accent: #ff6b5b; --surligne: #5b4a1c; --bouton: #e9e6df; --bouton-texte: #16161a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--fond); color: var(--texte); font-family: system-ui, "Segoe UI", Roboto, sans-serif; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: var(--fond2); border: 1px solid var(--trait); border-radius: 8px; padding: .45em .8em; }
+button:hover { border-color: var(--doux); }
+.cache { display: none !important; }
+
+/* ---------- Accueil ---------- */
+#accueil { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+#accueil h1 { font-family: var(--police-lecture); font-weight: 400; font-size: 2.2rem; margin: 0 0 4px; }
+.sous { color: var(--doux); margin: 0 0 28px; }
+.marque { display: flex; align-items: center; gap: 12px; }
+.marque img { width: 48px; height: 48px; flex: none; }
+.carte { background: var(--fond2); border: 1px solid var(--trait); border-radius: 12px; padding: 16px; margin-bottom: 18px; }
+.carte h2 { font-size: 1rem; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); }
+.entete-biblio { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 12px; }
+.entete-biblio h2 { margin: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); }
+.entete-biblio button { min-height: 40px; }
+#message:empty { display: none; }
+#accueil.survol { outline: 2px dashed var(--accent); outline-offset: -8px; border-radius: 12px; }   /* fichier glissé sur la fenêtre */
+.choix-import { display: block; width: 100%; text-align: left; padding: 14px 16px; margin: 0 0 10px; }
+.choix-import b { display: block; font-size: 1.05rem; } .choix-import small { color: var(--doux); }
+.champ { display: block; width: 100%; padding: .55em .65em; margin: 0 0 10px; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); font-size: 1rem; }
+textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
+.livres { list-style: none; margin: 0; padding: 0; }
+.livres li { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--trait); cursor: pointer; }
+.livres li:last-child { border-bottom: 0; }
+.livres li:hover .nom { text-decoration: underline; }
+.livres .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livres .info { color: var(--doux); font-size: .85rem; white-space: nowrap; }
+.livres .barre { width: 70px; height: 5px; background: var(--trait); border-radius: 3px; overflow: hidden; flex: none; }
+.livres .barre i { display: block; height: 100%; background: var(--accent); }
+.ligne { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ligne input[type=text] { flex: 1; min-width: 200px; padding: .45em .6em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
+.reglage { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
+.note { color: var(--doux); font-size: .85rem; margin: 8px 0 0; }
+#message { color: var(--accent); margin: 10px 0 0; min-height: 1.2em; }
+
+/* ---------- Lecteur ---------- */
+/* minmax(0, 1fr) : un long titre de chapitre ne doit jamais élargir le lecteur au-delà de l'écran. */
+#lecteur { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
+#haut { position: relative; padding: 14px 120px 10px; text-align: center; border-bottom: 1px solid var(--trait); min-height: 62px; }
+#parent { font-size: .8rem; color: var(--doux); text-transform: uppercase; letter-spacing: .08em; }
+#chapitre { font-family: var(--police-lecture); font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#retour { position: absolute; left: 12px; top: 14px; }
+#pages { position: absolute; right: 14px; top: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+#pages b { font-size: 1.15rem; font-weight: 600; }
+#pages span { display: block; color: var(--doux); font-size: .8rem; }
+#pages #restant { font-size: .72rem; white-space: nowrap; }
+#reel { font-size: .75rem; }
+#avance { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--accent); width: 0; }
+
+#scene { position: relative; overflow: hidden; }
+/* Le pivot est dans la colonne centrale : son centre tombe exactement au milieu de l'écran. */
+#mot { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
+  --taille-mot: calc(clamp(2.4rem, 7vw, 4.6rem) * var(--echelle-mot, 1));
+  font-family: var(--police-lecture); font-size: calc(var(--taille-mot) * var(--reduction, 1)); white-space: pre; user-select: none; cursor: pointer; }
+/* Colonnes latérales : le mot est collé au pivot ; les voisins débordent vers l'extérieur et sont coupés au bord. */
+#mot { padding: 0 60px; }
+#mot .g, #mot .d { display: flex; min-width: 0; overflow: hidden; }
+#mot .g { justify-content: flex-end; } #mot .d { justify-content: flex-start; }
+#mot .g > span, #mot .d > span { flex: none; }
+#mot .voisin { opacity: var(--opacite-voisins, .3); }
+#mot .g.deborde { -webkit-mask-image: linear-gradient(to right, transparent, #000 40px); mask-image: linear-gradient(to right, transparent, #000 40px); }
+#mot .d.deborde { -webkit-mask-image: linear-gradient(to left, transparent, #000 40px); mask-image: linear-gradient(to left, transparent, #000 40px); }
+#mot.pivot .pv { color: var(--accent); }
+#mot.reperes::before, #mot.reperes::after { content: ""; position: absolute; left: 50%; width: 2px; margin-left: -1px; height: .28em;
+  font-size: var(--taille-mot); background: var(--doux); opacity: .7; }
+#mot.reperes::before { top: calc(50% - .95em); } #mot.reperes::after { top: calc(50% + .67em); }
+#mot, #texte .page, #phrase, .question p, .marque-extrait { font-size-adjust: var(--hauteur-x); }
+#phrase { font-family: var(--police-lecture); }
+#phrase { position: absolute; left: 16px; right: 16px; top: calc(50% + 1.15 * clamp(2.4rem, 7vw, 4.6rem) * var(--echelle-mot, 1)); text-align: center;
+  color: var(--doux); font-size: .95rem; line-height: 1.4; max-width: 640px; margin: 0 auto;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
+#phrase b { color: var(--texte); font-weight: 600; }
+#modeLecture { padding: .4em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); color: var(--texte); font: inherit; }
+#scene { touch-action: manipulation; }
+#lecteur.joue #scene { touch-action: none; }
+#texte { position: absolute; inset: 0; overflow-y: auto; padding: 24px 16px 40px; touch-action: pan-y; }
+#texte .page { max-width: 700px; margin: 0 auto; font-family: var(--police-lecture); font-size: var(--taille-texte, 1.12rem); line-height: 1.65; }
+#texte h3 { font-weight: 400; font-size: 1.4rem; margin: 1.6em 0 .6em; text-align: center; }
+#texte p { margin: 0 0 .9em; text-indent: 1.4em; }
+#texte span[data-i] { cursor: pointer; border-radius: 3px; }
+#texte span[data-i]:hover { background: var(--fond2); }
+#texte span.ici { background: var(--surligne); outline: 2px solid var(--surligne); }
+#texte .plus { display: block; margin: 12px auto; }
+
+#bas { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--trait); transition: opacity .3s; }
+#lecteur.joue #bas, #lecteur.joue #haut button { opacity: .3; }
+#lecteur.joue #bas:hover, #lecteur.joue #haut button:hover { opacity: 1; }
+#jouer { width: 64px; height: 64px; border-radius: 50%; background: var(--bouton); color: var(--bouton-texte); border: 0; font-size: 1.6rem; display: grid; place-items: center; padding: 0; }
+.vitesse { display: flex; align-items: center; gap: 6px; }
+.vitesse input { width: 72px; text-align: center; padding: .4em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
+.vitesse small { color: var(--doux); }
+/* Bouton dictionnaire et panneau latéral */
+#btnDico { position: fixed; right: 8px; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; z-index: 20; transition: opacity .3s; }
+#btnDico svg { width: 24px; height: 24px; }
+#lecteur.joue #btnDico { opacity: .3; } #lecteur.joue #btnDico:hover { opacity: 1; }
+#pageTexte { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#voile { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 30; }
+#panneau { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 100vw; background: var(--fond); border-left: 1px solid var(--trait);
+  z-index: 31; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .25s ease; box-shadow: -6px 0 24px rgba(0,0,0,.2); }
+#panneau.ouvert { transform: none; }
+#panneau header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--trait); }
+#panneau header h2 { flex: 1; margin: 0; font-family: var(--police-lecture); font-weight: 400; font-size: 1.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#panneauCorps { flex: 1; overflow-y: auto; padding: 12px 16px 24px; line-height: 1.5; }
+#panneauCorps h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); margin: 16px 0 6px; }
+#panneauCorps ol { margin: 0; padding-left: 1.4em; } #panneauCorps li { margin-bottom: 6px; }
+#panneauCorps .lemme { color: var(--doux); font-style: italic; margin: 4px 0 10px; }
+#panneauCorps .liens { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--trait); }
+#panneauCorps .liens a { color: var(--texte); background: var(--fond2); border: 1px solid var(--trait); border-radius: 8px; padding: .3em .7em; text-decoration: none; font-size: .9rem; }
+#panneauCorps .vide { color: var(--doux); }
+.liste-panneau { list-style: none; padding: 0; margin: 0; }
+.liste-panneau li { padding: 8px 2px; border-bottom: 1px solid var(--trait); cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.liste-panneau li span { flex: 1; } .liste-panneau small { color: var(--doux); }
+@media (max-width: 600px) { #panneau { width: 90vw; } }
+@media (max-width: 760px) { #texte { padding-right: 64px; } }
+
+.outil { padding: .4em .55em; }
+#lecteur.test .vitesse, #lecteur.test #modeLecture, #lecteur.test .outil, #lecteur.test #btnDico, #lecteur.test label, #lecteur.test #phrasePrec, #lecteur.test #phraseSuiv, #lecteur.test .aide { display: none !important; }
+.page input[type=number], #accueil input[type=number] { padding: .35em .5em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
+.page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+.page h1 { font-family: var(--police-lecture); font-weight: 400; font-size: 2rem; margin: 12px 0 18px; }
+.page table { width: 100%; border-collapse: collapse; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.page th, .page td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--trait); }
+.page th { color: var(--doux); font-weight: 500; }
+.page td.n, .page th.n { text-align: right; }
+.graphe { width: 100%; height: auto; display: block; }
+.graphe text { fill: var(--doux); font-size: 11px; font-family: system-ui, sans-serif; }
+.graphe .grille { stroke: var(--trait); stroke-width: 1; }
+.graphe .barre { fill: var(--accent); }
+.graphe .cible:hover + .barre, .graphe .barre:hover { opacity: .75; }
+.jauge { height: 10px; background: var(--trait); border-radius: 5px; overflow: hidden; margin-top: 8px; }
+.jauge i { display: block; height: 100%; background: var(--accent); }
+.question { margin: 0 0 18px; }
+.question p { font-family: var(--police-lecture); font-size: 1.08rem; margin: 0 0 8px; }
+.question label { display: inline-flex; gap: 6px; align-items: center; margin: 0 14px 6px 0; cursor: pointer; }
+.btn-principal { background: var(--bouton); color: var(--bouton-texte); border: 0; padding: .6em 1.2em; }
+#pauseYeuxEcran { position: fixed; inset: 0; z-index: 40; background: var(--fond); display: grid; place-items: center; text-align: center; padding: 16px; }
+#pauseYeuxTexte { font-family: var(--police-lecture); font-size: 1.6rem; margin: 0 0 12px; }
+#pauseYeuxCompte { font-size: 3rem; font-variant-numeric: tabular-nums; color: var(--doux); margin: 0 0 16px; }
+.marque-extrait { font-family: var(--police-lecture); margin: 4px 0; }
+.marque-note { width: 100%; padding: .35em .5em; border: 1px solid var(--trait); border-radius: 6px; background: var(--fond2); }
+#champRecherche { width: 100%; padding: .5em .6em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); font-size: 1rem; }
+
+#toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); max-width: min(92vw, 520px); background: var(--bouton); color: var(--bouton-texte);
+  padding: 10px 16px; border-radius: 10px; font-size: .92rem; text-align: center; z-index: 50; box-shadow: 0 4px 18px rgba(0,0,0,.25); pointer-events: none; }
+.livres .retirer { flex: none; font-size: .8rem; padding: .25em .6em; }
+.reglage input[type=range] { width: 160px; }
+.reglage output { color: var(--doux); font-size: .85rem; margin-left: 6px; }
+#chargement { position: fixed; inset: 0; display: grid; place-items: center; background: var(--fond); font-size: 1.1rem; color: var(--doux); }
+
+@media (max-width: 600px) {
+  #haut { padding: 50px 12px 10px; }
+  #retour { top: 10px; } #pages { top: 8px; }
+  #pages span { display: inline; margin-left: 6px; }
+  #pages #restant { display: block; margin-left: 0; }
+  .aide { display: none; }
+  /* Barre du bas en trois lignes nettes : lecture / vitesse / outils (la lettre pivot se règle dans Réglages). */
+  #bas { gap: 8px; padding-top: 10px; }
+  #bas > label { display: none; }
+  #jouer { width: 58px; height: 58px; }
+  #phrasePrec, #phraseSuiv { min-width: 48px; min-height: 44px; }
+  .vitesse { flex-basis: 100%; justify-content: center; }
+  .vitesse button { min-width: 44px; min-height: 40px; }
+  #modeLecture { min-height: 40px; width: 124px; }
+  .outil { min-width: 40px; min-height: 40px; }
+  #bas { column-gap: 6px; }
+  #accueil { padding-top: 20px; }
+  .livres li { min-height: 48px; flex-wrap: wrap; row-gap: 4px; }
+  .livres .nom { flex-basis: 100%; white-space: normal; }
+  .livres .info { flex: 1; white-space: normal; font-size: .8rem; }
+  .reglage input[type=range] { width: 120px; flex: none; }
+}
+/* Téléphone à l'horizontale : tout sur une ligne, pour garder de la place au mot. */
+@media (max-height: 500px) and (orientation: landscape) {
+  #haut { padding: 6px 140px 6px; min-height: 0; }
+  #parent { display: none; }
+  #chapitre { font-size: 1rem; }
+  #retour { top: 4px; padding: .25em .6em; } #pages { top: 2px; }
+  #pages b { font-size: .95rem; } #pages #restant { display: none; }
+  #bas { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); justify-content: flex-start; }
+  #bas > * { flex: none; }
+  #bas > label, .aide, #reel { display: none; }
+  #jouer { width: 44px; height: 44px; font-size: 1.2rem; }
+  .vitesse { flex-basis: auto; }
+}
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: none; }
+#texte, #panneauCorps { overscroll-behavior: contain; }
+</style>
+</head>
+<body>
+
+<!-- ======= Accueil / bibliothèque ======= -->
+<div id="accueil">
+  <h1 class="marque"><img src="icones/icone-96.png" alt="" width="48" height="48">Kdence</h1>
+  <p class="sous" id="sousTitre">Un mot à la fois, à la vitesse que vous choisissez.</p>
+
+  <div class="ligne" style="margin-bottom:18px">
+    <button id="ouvrirStats">Statistiques</button>
+    <button id="ouvrirCalibrage">Test de calibrage</button>
+  </div>
+
+  <div class="entete-biblio">
+    <h2>Ma bibliothèque</h2>
+    <button id="btnImporter" class="btn-principal">＋ Importer</button>
+  </div>
+  <input type="file" id="fichier" accept=".epub,.pdf,.docx,.txt,.md,.html,.htm" class="cache">
+  <p id="message"></p>
+  <p class="note cache" id="biblioAucun">Aucun livre pour l'instant : touchez « Importer ».</p>
+
+  <div class="carte cache" id="carteBiblio">
+    <ul class="livres" id="listeBiblio"></ul>
+    <p class="note" id="biblioVide"></p>
+  </div>
+
+  <div class="carte cache" id="carteOneDrive">
+    <h2>OneDrive</h2>
+    <p class="note" id="odEtat"></p>
+    <ul class="livres" id="listeOneDrive"></ul>
+  </div>
+
+  <div class="carte cache" id="carteRecents">
+    <h2>Sur cet appareil</h2>
+    <ul class="livres" id="listeRecents"></ul>
+  </div>
+
+  <div class="carte">
+    <h2>Réglages</h2>
+    <div class="reglage"><span>Vitesse par défaut (mots/min)</span>
+      <input type="number" id="vitesseDefaut" min="20" max="2000" step="10" style="width:90px"></div>
+    <div class="reglage"><span>Lettre pivot en couleur</span><input type="checkbox" id="pivotDefaut"></div>
+    <div class="reglage"><span>Repères de fixation</span><input type="checkbox" id="reperes"></div>
+    <div class="reglage"><span>Afficher la phrase en cours</span><input type="checkbox" id="phraseEnCours"></div>
+    <div class="reglage"><span>Mots voisins en transparence</span><input type="checkbox" id="motsVoisins"></div>
+    <div class="reglage"><span>Mots affichés à la fois<output id="v-motsParGroupe"></output></span><input type="range" id="motsParGroupe" min="1" max="5" step="1"></div>
+    <div class="reglage"><span>Couper les groupes aux virgules et aux points</span><input type="checkbox" id="groupeCoupe"></div>
+    <div class="reglage"><span>Taille du mot en lecture<output id="v-tailleMot"></output></span><input type="range" id="tailleMot" min="50" max="200" step="5"></div>
+    <div class="reglage"><span>Taille du texte en pause<output id="v-tailleTexte"></output></span><input type="range" id="tailleTexte" min="0.9" max="1.6" step="0.02"></div>
+    <h2 style="margin-top:18px">Rythme</h2>
+    <div class="reglage"><span>Pause en fin de phrase<output id="v-pauseFinPhrase"></output></span><input type="range" id="pauseFinPhrase" min="0" max="1500" step="50"></div>
+    <div class="reglage"><span>Pause en fin de paragraphe<output id="v-pauseParagraphe"></output></span><input type="range" id="pauseParagraphe" min="0" max="1500" step="50"></div>
+    <div class="reglage"><span>Rythme selon la fréquence des mots</span><input type="checkbox" id="rythmeFrequence"></div>
+    <div class="reglage"><span>La vitesse réglée est le débit réel</span><input type="checkbox" id="debitReel"></div>
+    <div class="reglage"><span>Démarrage progressif<output id="v-demarrage"></output></span><input type="range" id="demarrage" min="0" max="20" step="1"></div>
+    <div class="reglage"><span>Retour en arrière à la reprise<output id="v-reculReprise"></output></span><input type="range" id="reculReprise" min="0" max="15" step="1"></div>
+    <div class="reglage"><span>Pause pour les yeux</span><input type="checkbox" id="pauseYeux"></div>
+    <div class="reglage"><span>… toutes les<output id="v-pauseYeuxMin"></output></span><input type="range" id="pauseYeuxMin" min="5" max="60" step="5"></div>
+    <h2 style="margin-top:18px">Affichage</h2>
+    <div class="reglage"><span>Thème</span>
+      <button id="theme">Automatique</button></div>
+    <div class="cache" id="reglageOneDrive">
+      <h2 style="margin-top:18px">Synchronisation OneDrive</h2>
+      <p class="note">Relie ce téléphone à la bibliothèque de l'ordinateur : mêmes livres, mêmes positions, mêmes marque-pages.
+        Kdence n'accède qu'à vos fichiers OneDrive, avec votre accord, et ne voit jamais votre mot de passe.</p>
+      <p id="odReglageEtat" style="margin:8px 0"></p>
+      <div class="ligne">
+        <button id="odConnecter" class="btn-principal">Connecter OneDrive</button>
+        <button id="odSynchro">Synchroniser maintenant</button>
+        <button id="odDeconnecter">Déconnecter</button>
+      </div>
+      <details style="margin-top:10px">
+        <summary class="note">Réglages avancés</summary>
+        <div class="reglage" style="display:block"><span>Dossier de la bibliothèque dans OneDrive</span>
+          <input type="text" id="odDossier" class="champ" spellcheck="false" style="margin-top:6px"></div>
+        <div class="reglage" style="display:block"><span>Identifiant d'application Microsoft</span>
+          <input type="text" id="odClient" class="champ" spellcheck="false" style="margin-top:6px" placeholder="00000000-0000-0000-0000-000000000000"></div>
+      </details>
+    </div>
+    <div class="cache" id="reglageDossier">
+      <div class="reglage" style="display:block">
+        <span>Dossier de la bibliothèque</span>
+        <div class="ligne" style="margin-top:6px">
+          <input type="text" id="dossier" spellcheck="false">
+          <button id="enregistrerDossier">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= Statistiques ======= -->
+<div id="stats" class="page cache">
+  <button class="retourAccueil">← Accueil</button>
+  <h1>Statistiques</h1>
+  <div class="carte">
+    <h2>Objectif du jour</h2>
+    <div class="reglage"><span>Objectif quotidien (minutes, 0 = aucun)</span><input type="number" id="objectif" min="0" max="600" step="5" style="width:80px"></div>
+    <div id="objectifJour"></div>
+  </div>
+  <div class="carte"><h2>Mots lus par jour (30 derniers jours)</h2><div id="histoJours"></div></div>
+  <div class="carte"><h2>Débit réel moyen par semaine</h2><div id="tableSemaines"></div></div>
+  <div class="carte"><h2>Temps passé par livre</h2><div id="tableLivres"></div></div>
+  <p class="note">Seul le temps de lecture active est compté (les pauses sont exclues). Statistiques enregistrées sur cet appareil.</p>
+</div>
+
+<!-- ======= Test de calibrage ======= -->
+<div id="calibrage" class="page cache">
+  <button class="retourAccueil">← Accueil</button>
+  <h1>Test de calibrage</h1>
+  <div id="calibrageCorps"></div>
+</div>
+
+<div id="pauseYeuxEcran" class="cache"><div><p id="pauseYeuxTexte"></p><p id="pauseYeuxCompte"></p><button id="pauseYeuxFermer" class="cache">Fermer</button></div></div>
+
+<!-- ======= Lecteur ======= -->
+<div id="lecteur" class="cache">
+  <div id="haut">
+    <button id="retour" title="Retour à la bibliothèque">← Livres</button>
+    <div id="parent"></div>
+    <div id="chapitre"></div>
+    <div id="pages"><b id="numPage">1 / 1</b><span id="pourcent">0 %</span><span id="restant"></span></div>
+    <div id="avance"></div>
+  </div>
+  <div id="scene">
+    <div id="mot" class="cache"><span class="g"><span class="voisin"></span><span class="gm"></span></span><span class="pv"></span><span class="d"><span class="dm"></span><span class="voisin"></span></span></div>
+    <div id="phrase" class="cache"></div>
+    <div id="texte"><div class="page" id="pageTexte"></div></div>
+  </div>
+  <button id="btnDico" title="Définition (D)" aria-label="Définition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5.5c3-1.5 6.5-1.5 10 1 3.5-2.5 7-2.5 10-1V19c-3-1.5-6.5-1.5-10 1-3.5-2.5-7-2.5-10-1z"/><path d="M12 6.5V20"/></svg></button>
+  <div id="bas">
+    <button id="phrasePrec" title="Phrase précédente (←)">⏮</button>
+    <button id="jouer" title="Lecture / pause (Espace)">▶</button>
+    <button id="phraseSuiv" title="Phrase suivante (→)">⏭</button>
+    <div class="vitesse">
+      <button id="moins" title="Moins vite (↓)">−</button>
+      <input type="number" id="vitesse" min="20" max="2000" step="10" inputmode="numeric" enterkeyhint="done">
+      <button id="plus" title="Plus vite (↑)">+</button>
+      <small>mots/min<br><span id="reel"></span></small>
+    </div>
+    <label><input type="checkbox" id="pivot"> Lettre pivot</label>
+    <select id="modeLecture" title="Mode de lecture (M)"><option value="mot">Mot à mot</option><option value="guide">Défilement guidé</option></select>
+    <button id="btnRecherche" class="outil" title="Rechercher dans le livre (F)" aria-label="Rechercher">🔍</button>
+    <button id="btnMarque" class="outil" title="Ajouter un marque-page ici (B)" aria-label="Ajouter un marque-page">🔖</button>
+    <button id="btnMarques" class="outil" title="Marque-pages" aria-label="Marque-pages">📑</button>
+    <button id="btnVocab" class="outil" title="Mots cherchés dans ce livre" aria-label="Mots cherchés">🗒️</button>
+  </div>
+</div>
+
+<div id="voile" class="cache"></div>
+<aside id="panneau" aria-hidden="true">
+  <header><h2 id="panneauTitre"></h2><button id="panneauFermer">Fermer</button></header>
+  <div id="panneauCorps"></div>
+</aside>
+
+<div id="chargement" class="cache">Analyse du livre…</div>
+<div id="toast" class="cache"></div>
+
+<script>
+'use strict';
+// ---------- Constantes ajustables ----------
+const MOTS_PAR_PAGE = 250;
+const FORMATS_ACCEPTES = /\.(epub|pdf|docx|txt|md|html?)$/i;
+const MOTS_MIN_IMPORT = 20;      // en dessous, un texte collé ou une page ne sont pas considérés comme lisibles
+const GESTE_BALAYAGE_PX = 50;      // distance minimale d'un balayage horizontal
+const GESTE_CRAN_PX = 40;          // un cran de vitesse tous les 40 px de balayage vertical
+const GESTE_CRAN_VITESSE = 10;     // mots/min par cran
+const DOUBLE_APPUI_MS = 300;
+// Rythme : durée = base × f_longueur × f_fréquence + pauses (voir dureeMot)
+const SEUIL_LONG = 10, FACTEUR_LONG = 2;              // mots de plus de 10 lettres : ×2
+const FACTEUR_TRES_FREQUENT = 0.85, FACTEUR_RARE = 1.25;
+const PAUSE_VIRGULE = 0.4;                            // × base, après , ; :
+const VITESSE_DEPART = 0.6;                           // démarrage progressif : de 60 % à 100 %
+const MARGE_BOUTON_DICO = 60;                         // px réservés au bouton dictionnaire à droite (= marge de #mot en CSS)
+const MOTS_VOISINS = 2;                               // mots affichés en transparence de chaque côté (opacité : --opacite-voisins)
+const APPUI_LONG_MS = 500;                            // appui long sur un mot = définition
+const DICO_CACHE_MAX = 500, DICO_DEFINITIONS_MAX = 5;
+const DEFAUTS = {
+  vitesse: 300, pivot: true, theme: 'auto',
+  tailleMot: 100,        // % de la taille d'origine du mot en lecture
+  tailleTexte: 1.12,     // rem, texte complet en pause
+  avertiVeille: false,
+  pauseFinPhrase: 400,   // ms, minimum après . ! ? …
+  pauseParagraphe: 600,  // ms d'écran vide en fin de paragraphe
+  rythmeFrequence: true,
+  debitReel: false,      // la vitesse réglée devient le débit moyen réel du livre
+  demarrage: 8,          // mots de démarrage progressif (0 = désactivé)
+  reculReprise: 5,       // mots relus à la reprise après une pause
+  reperes: true,         // traits de fixation au-dessus et au-dessous du pivot
+  phraseEnCours: false,  // phrase en cours en petit sous le mot
+  motsVoisins: true,     // 2 mots avant et 2 mots après, en transparence, de part et d'autre du mot
+  motsParGroupe: 1,      // mots affichés à la fois (1 à 5)
+  groupeCoupe: true,     // un groupe s'arrête après une virgule ou un point
+  pauseYeux: false,      // pause imposée toutes les pauseYeuxMin minutes de lecture active
+  pauseYeuxMin: 20,
+  objectif: 0,           // minutes de lecture par jour (0 = pas d'objectif)
+  odClient: '',          // identifiant d'application Microsoft (sinon celui de onedrive.json)
+  odDossier: '',         // dossier de la bibliothèque dans OneDrive (sinon le chemin par défaut)
+};
+const PAUSE_YEUX_S = 20;
+const RECHERCHE_MAX = 100;
+const CAL_VITESSES = [250, 350, 450, 550, 700], CAL_SEUIL = 5;  // test de calibrage : vitesse conseillée = score >= 5/6
+
+const $ = id => document.getElementById(id);
+
+// ---------- Préférences locales ----------
+const prefs = Object.assign({}, DEFAUTS, lireLocal('lc:prefs') || {});
+function lireLocal(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
+function ecrireLocal(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} }
+function sauverPrefs() { ecrireLocal('lc:prefs', prefs); }
+function appliquerTailles() {
+  document.documentElement.style.setProperty('--echelle-mot', prefs.tailleMot / 100);
+  document.documentElement.style.setProperty('--taille-texte', prefs.tailleTexte + 'rem');
+}
+// Relie un champ de l'écran Réglages à prefs[id] (case à cocher, curseur ou nombre).
+function lierReglage(id, format, apres) {
+  const el = $(id), sortie = document.getElementById('v-' + id);
+  const afficher = () => { if (sortie && format) sortie.textContent = ' ' + format(prefs[id]); };
+  if (el.type === 'checkbox') el.checked = !!prefs[id]; else el.value = prefs[id];
+  afficher();
+  el.addEventListener(el.type === 'range' ? 'input' : 'change', () => {
+    prefs[id] = el.type === 'checkbox' ? el.checked : el.type === 'text' ? el.value.trim() : +el.value;
+    sauverPrefs(); afficher(); if (apres) apres();
+  });
+}
+
+// Données embarquées (version fichier unique) ou lues dans lib/.
+async function chargerDonnees(nom) {
+  if (window.DONNEES && window.DONNEES[nom]) return window.DONNEES[nom];
+  const r = await fetch('lib/' + nom);
+  if (!r.ok) throw new Error(nom + ' introuvable');
+  return r.json();
+}
+// Fréquences : Lexique 3.83 (B. New & C. Pallier, www.lexique.org), licence CC BY-SA 4.0 — attribution aussi dans RECAP.md.
+let FREQ = null;
+const freqPretes = chargerDonnees('frequences.json')
+  .then(d => { FREQ = { tres: new Set(d.tresFrequents.split(' ')), connus: new Set(d.connus.split(' ')) }; })
+  .catch(e => console.warn('Fréquences indisponibles :', e.message));
+
+let minuteurToast;
+function afficherToast(texte, ms = 2500) {
+  const t = $('toast'); t.textContent = texte; t.classList.remove('cache');
+  clearTimeout(minuteurToast); minuteurToast = setTimeout(() => t.classList.add('cache'), ms);
+}
+
+// ---------- Écran toujours allumé pendant la lecture ----------
+let verrou = null;
+async function verrouillerEcran() {
+  if (verrou) return;
+  try {
+    if (!('wakeLock' in navigator)) throw new Error('absent');
+    const v = await navigator.wakeLock.request('screen');
+    if (!E.joue) { v.release().catch(() => {}); return; }
+    verrou = v;
+    v.addEventListener('release', () => { if (verrou === v) verrou = null; });
+  } catch {
+    if (!prefs.avertiVeille) {
+      prefs.avertiVeille = true; sauverPrefs();
+      afficherToast('Votre navigateur ne peut pas garder l\'écran allumé : allongez le délai de mise en veille dans les réglages du téléphone.', 8000);
+    }
+  }
+}
+function libererEcran() { if (verrou) { verrou.release().catch(() => {}); verrou = null; } }
+
+// ---------- Livres conservés sur l'appareil (mode portable) ----------
+const idb = {
+  ouvrir() {
+    return this.p || (this.p = new Promise((ok, ko) => {
+      const r = indexedDB.open('lecture-cadencee', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('livres');
+      r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error);
+    }));
+  },
+  async op(mode, f) {
+    const db = await this.ouvrir();
+    return new Promise((ok, ko) => {
+      const tx = db.transaction('livres', mode), req = f(tx.objectStore('livres'));
+      tx.oncomplete = () => ok(req.result); tx.onerror = tx.onabort = () => ko(tx.error);
+    });
+  },
+  lire(cle) { return this.op('readonly', s => s.get(cle)); },
+  ecrire(cle, v) { return this.op('readwrite', s => s.put(v, cle)); },
+  supprimer(cle) { return this.op('readwrite', s => s.delete(cle)); },
+};
+function appliquerTheme() {
+  if (prefs.theme === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme = prefs.theme;
+  $('theme').textContent = { auto: 'Automatique', light: 'Clair', dark: 'Sombre' }[prefs.theme];
+}
+
+// ---------- Mode : bibliothèque (serveur local) ou portable ----------
+let modeBiblio = false;
+let progressions = {};
+
+async function api(chemin, options) {
+  const r = await fetch(chemin, options);
+  if (!r.ok) throw new Error((await r.text()) || r.statusText);
+  return r;
+}
+
+async function detecterMode() {
+  // Les versions sans serveur (fichier unique, application installable) ne cherchent pas de bibliothèque.
+  if ((location.protocol === 'http:' || location.protocol === 'https:') && !window.PWA && !window.DONNEES) {
+    try { const r = await fetch('api/config'); if (r.ok) { modeBiblio = true; $('dossier').value = (await r.json()).dossier; } } catch {}
+  }
+  $('carteBiblio').classList.toggle('cache', !modeBiblio);
+  $('reglageDossier').classList.toggle('cache', !modeBiblio);
+  $('sousTitre').textContent = modeBiblio
+    ? 'Un mot à la fois, à la vitesse que vous choisissez. Votre position est retenue dans la bibliothèque.'
+    : 'Version portable : rien n\'est envoyé nulle part, la position est retenue sur cet appareil.';
+}
+
+function formatTaille(n) { return n > 1e6 ? (n / 1e6).toFixed(1) + ' Mo' : Math.round(n / 1e3) + ' ko'; }
+function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''; }
+
+function ligneLivre(nom, prog, extra, onclick, retirer) {
+  const li = document.createElement('li');
+  const pc = prog ? prog.pourcentage : 0;
+  li.innerHTML = '<span class="nom"></span><span class="info"></span><span class="barre"><i></i></span>';
+  const format = (nom.match(/\.(\w+)$/) || ['', ''])[1].toUpperCase();
+  li.querySelector('.nom').textContent = (prog && prog.titre) || nom.split('/').pop().replace(/\.[^.]+$/, '');
+  li.querySelector('.nom').title = nom;
+  li.querySelector('.info').textContent = format + ' · ' + (prog ? `p. ${prog.page} / ${prog.pages} · ${pc} %`
+    + (prog.restantMs != null ? ' · reste ' + formatDuree(prog.restantMs) : '') + (prog.maj ? ' · ' + formatDate(prog.maj) : '') : extra);
+  li.querySelector('i').style.width = pc + '%';
+  if (onclick) li.onclick = onclick;
+  if (retirer) {
+    const b = document.createElement('button');
+    b.className = 'retirer'; b.textContent = 'Retirer';
+    b.onclick = e => { e.stopPropagation(); retirer(); };
+    li.appendChild(b);
+  }
+  return li;
+}
+
+// Bouton « Retour » d'Android : hors de l'accueil (ou panneau ouvert), une entrée d'historique est gardée en réserve.
+// Retour ferme alors le panneau, l'écran de pause ou ramène à l'accueil, au lieu de quitter l'application.
+const aLaBase = () => !$('accueil').classList.contains('cache') && !panneauOuvert();
+function reserverRetour() { if (!(history.state && history.state.kdence)) history.pushState({ kdence: 1 }, ''); }
+window.addEventListener('popstate', () => {
+  if (panneauOuvert()) fermerPanneau();
+  else if (!$('pauseYeuxEcran').classList.contains('cache')) $('pauseYeuxEcran').classList.add('cache');
+  else if (!$('lecteur').classList.contains('cache')) $('retour').click();
+  else if ($('accueil').classList.contains('cache')) { restaurerPrefsTest(); afficherAccueil(); }
+  if (!aLaBase()) reserverRetour();
+});
+function montrerPage(id) {
+  for (const p of ['accueil', 'lecteur', 'stats', 'calibrage']) $(p).classList.toggle('cache', p !== id);
+  if (id !== 'accueil') reserverRetour();
+  scrollTo(0, 0);
+}
+async function afficherAccueil() {
+  montrerPage('accueil');
+  document.title = 'Kdence';
+  if (modeBiblio) {
+    const ul = $('listeBiblio'); ul.innerHTML = '';
+    try {
+      const { livres, progression } = await (await api('api/livres')).json();
+      progressions = progression;
+      livres.sort((a, b) => ((progression[b.nom] || {}).maj || '').localeCompare((progression[a.nom] || {}).maj || '') || a.nom.localeCompare(b.nom));
+      for (const l of livres) ul.appendChild(ligneLivre(l.nom, progression[l.nom], formatTaille(l.taille), () => ouvrirDepuisBiblio(l.nom)));
+      $('biblioVide').textContent = livres.length ? '' : 'Aucun livre dans le dossier pour l\'instant. Déposez-en un ci-dessus ou copiez-le dans le dossier.';
+    } catch (e) { $('biblioVide').textContent = 'Impossible de lire le dossier : ' + e.message; }
+  }
+  if (!modeBiblio) afficherOneDrive();
+  const recents = Object.keys(localStorage).filter(k => k.startsWith('lc:prog:')).map(k => Object.assign(lireLocal(k) || {}, { cle: k }))
+    .filter(p => p.total).sort((a, b) => (b.maj || '').localeCompare(a.maj || '')).slice(0, 20);
+  $('carteRecents').classList.toggle('cache', !recents.length);
+  const ul = $('listeRecents'); ul.innerHTML = '';
+  for (const p of recents) ul.appendChild(ligneLivre(p.fichier || '', p, '', () => rouvrirLocal(p), () => retirerLocal(p)));
+  $('biblioAucun').classList.toggle('cache', modeBiblio || recents.length > 0 || od.connecte());
+}
+
+async function rouvrirLocal(p) {
+  $('message').textContent = '';
+  let rec = null;
+  try { rec = await idb.lire(p.cle); } catch {}
+  if (rec && rec.buf) return ouvrirLivre(rec.nom, rec.buf, { type: 'local', cle: p.cle });
+  $('message').textContent = 'Resélectionnez ce livre pour reprendre : « ' + (p.fichier || p.titre) + ' ».';
+  $('fichier').click();
+}
+async function retirerLocal(p) {
+  if (!confirm('Retirer « ' + (p.titre || p.fichier) + ' » de cet appareil ? Le livre et sa position de lecture seront effacés.')) return;
+  try { await idb.supprimer(p.cle); } catch {}
+  localStorage.removeItem(p.cle);
+  afficherAccueil();
+}
+
+// ---------- Ouverture ----------
+async function ouvrirDepuisBiblio(nom) {
+  // Positions relues au dernier moment : le téléphone a pu avancer entre-temps (fichier partagé par OneDrive).
+  try { progressions = (await (await api('api/livres')).json()).progression; } catch {}
+  const buf = await (await api('api/livre?nom=' + encodeURIComponent(nom))).arrayBuffer();
+  await ouvrirLivre(nom, buf, { type: 'biblio', cle: nom });
+}
+
+async function ouvrirFichier(f) {
+  $('message').textContent = '';
+  if (!FORMATS_ACCEPTES.test(f.name)) { $('message').textContent = 'Format non pris en charge : utilisez un EPUB, un PDF, un Word .docx, un TXT ou une page HTML (les anciens .doc doivent d\'abord être enregistrés en .docx).'; return; }
+  const buf = await f.arrayBuffer();
+  if (modeBiblio) {
+    try {
+      const r = await (await api('api/livre?nom=' + encodeURIComponent(f.name), { method: 'POST', body: buf })).json();
+      return ouvrirLivre(r.nom, buf, { type: 'biblio', cle: r.nom });
+    } catch (e) { console.warn('Ajout à la bibliothèque impossible', e); }
+  }
+  // Téléphone relié à OneDrive : le livre rejoint la bibliothèque commune avec l'ordinateur.
+  if (!modeBiblio && od.connecte()) {
+    try {
+      const nom = await odEnvoyerLivre(f.name, buf);
+      await idb.ecrire('od:' + nom, { nom, buf });
+      return ouvrirLivre(nom, buf, { type: 'onedrive', cle: nom });
+    } catch (e) { console.warn('Envoi vers OneDrive impossible', e); afficherToast('OneDrive injoignable : le livre est gardé sur ce téléphone seulement.', 5000); }
+  }
+  const cle = 'lc:prog:' + f.name + ':' + f.size;
+  try {
+    await idb.ecrire(cle, { nom: f.name, buf });
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  } catch (e) { console.warn('Livre non conservé sur l\'appareil', e); }
+  await ouvrirLivre(f.name, buf, { type: 'local', cle });
+}
+
+async function ouvrirLivre(nom, buf, source) {
+  $('chargement').classList.remove('cache');
+  $('chargement').textContent = 'Analyse du livre…';
+  try {
+    const ext = nom.split('.').pop().toLowerCase();
+    const L = ext === 'epub' ? await lireEpub(buf) : ext === 'pdf' ? await lirePdf(buf) : ext === 'docx' ? await lireDocx(buf)
+      : /^html?$/.test(ext) ? lireHtml(buf) : lireTexteBrut(buf);
+    if (!L.titre) L.titre = nom.split('/').pop().replace(/\.[^.]+$/, '');
+    if (!L.mots.length) throw new Error(ext === 'pdf' ? 'Aucun texte trouvé : ce PDF est sans doute une image scannée.' : 'Aucun texte trouvé dans ce fichier.');
+    await freqPretes;
+    preparer(L);
+    const prog = source.type === 'biblio' ? progressions[source.cle] : source.type === 'onedrive' ? od.progression[source.cle] : lireLocal(source.cle);
+    demarrerLecteur(L, source, nom, prog);
+  } catch (e) {
+    console.error(e);
+    $('message').textContent = 'Lecture du fichier impossible : ' + e.message;
+  } finally { $('chargement').classList.add('cache'); }
+}
+
+// ---------- Construction du texte ----------
+// Un livre = une liste de mots + des blocs (paragraphes, titres) + des chapitres.
+function nouveauLivre() { return { titre: '', mots: [], colle: [], blocs: [], chapitres: [], pagesDebut: null }; }
+
+const OUVRANT = /^[«“‘„(\[—–-]+$/, FERMANT = /^[»”’)\]:;!?.,…]+$/;
+function decouper(texte) {
+  const brut = texte.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  const out = [];
+  let attente = '';
+  for (const m of brut) {
+    if (OUVRANT.test(m)) { attente += m + ' '; continue; }
+    if (FERMANT.test(m) && out.length && !attente) { out[out.length - 1] += ' ' + m; continue; }
+    out.push(attente + m); attente = '';
+  }
+  if (attente && out.length) out[out.length - 1] += ' ' + attente.trim();
+  // « Vis-à-vis » -> « Vis- » « à- » « vis » ; colle = pas d'espace avant le mot suivant dans le texte complet.
+  const morceaux = [];
+  for (const m of out) {
+    const parts = m.split(/(?<=\p{L}[-‐‑])(?=\p{L})/u);
+    parts.forEach((p, k) => morceaux.push({ m: p, colle: k < parts.length - 1 }));
+  }
+  return morceaux;
+}
+function ajouterPara(L, texte, page) {
+  const mots = decouper(texte);
+  if (!mots.length) return;
+  const debut = L.mots.length;
+  for (const { m, colle } of mots) { L.mots.push(m); L.colle.push(colle ? 1 : 0); }
+  L.blocs.push({ type: 'p', debut, fin: L.mots.length, page });
+}
+function ajouterTitre(L, texte, niveau, estChapitre) {
+  texte = texte.replace(/\s+/g, ' ').trim();
+  if (!texte) return;
+  L.blocs.push({ type: 'h', texte, debut: L.mots.length, fin: L.mots.length });
+  if (estChapitre) ajouterChapitre(L, texte, niveau);
+}
+function ajouterChapitre(L, titre, niveau) {
+  titre = (titre || '').replace(/\s+/g, ' ').trim();
+  if (titre) L.chapitres.push({ titre, niveau, debut: L.mots.length });
+}
+
+// Parcours d'un document HTML/XHTML : texte -> paragraphes, h1..h6 -> titres.
+const BLOCS = new Set('p div li blockquote pre section article dt dd figcaption td th tr table ul ol dl header footer aside nav hr body center'.split(' '));
+const IGNORES = new Set(['script', 'style', 'head', 'title', 'svg', 'math', 'noscript']);
+function parcourirDom(racine, L, opts) {
+  let tampon = '';
+  const vider = () => { if (tampon.trim()) ajouterPara(L, tampon); tampon = ''; };
+  const ancre = el => {
+    const id = el.getAttribute && el.getAttribute('id');
+    if (id && opts.ancres && opts.ancres.has(id)) {
+      vider();
+      for (const a of opts.ancres.get(id)) ajouterChapitre(L, a.titre, a.niveau);
+      opts.ancres.delete(id);
+    }
+  };
+  (function rec(n) {
+    for (const e of n.childNodes) {
+      if (e.nodeType === 3) { tampon += e.nodeValue; continue; }
+      if (e.nodeType !== 1) continue;
+      const nom = (e.localName || '').toLowerCase();
+      if (IGNORES.has(nom)) continue;
+      ancre(e);
+      if (/^h[1-6]$/.test(nom)) {
+        vider();
+        e.querySelectorAll('[id]').forEach(ancre);
+        const niv = +nom[1] - 1;
+        ajouterTitre(L, e.textContent, niv, opts.titresSontChapitres && niv <= 2);
+        continue;
+      }
+      if (nom === 'br') { vider(); continue; }
+      if (BLOCS.has(nom)) { vider(); rec(e); vider(); } else rec(e);
+    }
+  })(racine);
+  vider();
+}
+
+function parseXml(txt) {
+  let doc = new DOMParser().parseFromString(txt, 'application/xhtml+xml');
+  if (doc.getElementsByTagName('parsererror').length) doc = new DOMParser().parseFromString(txt, 'text/html');
+  return doc;
+}
+function dossierDe(chemin) { const i = chemin.lastIndexOf('/'); return i < 0 ? '' : chemin.slice(0, i + 1); }
+function resoudre(base, href) {
+  const [chemin, frag] = href.split('#');
+  let dec; try { dec = decodeURIComponent(chemin); } catch { dec = chemin; }
+  const out = [];
+  for (const p of (chemin ? base + dec : base.replace(/\/$/, '')).split('/')) {
+    if (p === '..') out.pop(); else if (p && p !== '.') out.push(p);
+  }
+  return { fichier: out.join('/'), frag: frag ? decodeURIComponent(frag) : null };
+}
+function enfants(el, nom) { return [...el.children].filter(c => c.localName.toLowerCase() === nom); }
+
+// ---------- EPUB ----------
+async function lireEpub(buf) {
+  const zip = await JSZip.loadAsync(buf);
+  const fichiers = {};
+  zip.forEach((p, f) => { fichiers[p.toLowerCase()] = f; });
+  const lire = p => { const f = zip.file(p) || fichiers[p.toLowerCase()]; return f ? f.async('string') : Promise.resolve(null); };
+
+  const conteneur = parseXml(await lire('META-INF/container.xml'));
+  const opfChemin = conteneur.getElementsByTagName('rootfile')[0].getAttribute('full-path');
+  const base = dossierDe(opfChemin);
+  const opf = parseXml(await lire(opfChemin));
+  const L = nouveauLivre();
+  const t = opf.getElementsByTagNameNS('*', 'title')[0];
+  L.titre = t ? t.textContent.trim() : '';
+
+  const manifeste = {};
+  for (const it of opf.getElementsByTagNameNS('*', 'item'))
+    manifeste[it.getAttribute('id')] = { href: resoudre(base, it.getAttribute('href')).fichier, type: it.getAttribute('media-type') || '', props: it.getAttribute('properties') || '' };
+  const spineEl = opf.getElementsByTagNameNS('*', 'spine')[0];
+  const spine = [...spineEl.getElementsByTagNameNS('*', 'itemref')].map(r => manifeste[r.getAttribute('idref')]).filter(Boolean);
+
+  // Table des matières : EPUB 3 (nav) sinon EPUB 2 (ncx)
+  const toc = [];
+  const nav = Object.values(manifeste).find(m => /\bnav\b/.test(m.props));
+  if (nav) {
+    const doc = parseXml(await lire(nav.href) || '');
+    const navs = [...doc.getElementsByTagNameNS('*', 'nav')];
+    const navToc = navs.find(n => (n.getAttribute('epub:type') || n.getAttributeNS('http://www.idpf.org/2007/ops', 'type') || '').includes('toc')) || navs[0];
+    const parcourirOl = (ol, niv) => {
+      for (const li of enfants(ol, 'li')) {
+        const lien = enfants(li, 'a')[0] || enfants(li, 'span')[0];
+        if (lien) {
+          const href = lien.getAttribute('href');
+          if (href) toc.push({ ...resoudre(dossierDe(nav.href), href), titre: lien.textContent, niveau: niv });
+          else toc.push({ fichier: null, titre: lien.textContent, niveau: niv });
+        }
+        for (const sous of enfants(li, 'ol')) parcourirOl(sous, niv + 1);
+      }
+    };
+    if (navToc) for (const ol of enfants(navToc, 'ol')) parcourirOl(ol, 0);
+  }
+  if (!toc.length) {
+    const ncxId = spineEl.getAttribute('toc');
+    const ncx = (ncxId && manifeste[ncxId]) || Object.values(manifeste).find(m => m.type.includes('ncx'));
+    if (ncx) {
+      const doc = parseXml(await lire(ncx.href) || '');
+      const navMap = doc.getElementsByTagNameNS('*', 'navMap')[0];
+      const parcourirNp = (el, niv) => {
+        for (const np of enfants(el, 'navpoint')) {
+          const label = np.getElementsByTagNameNS('*', 'text')[0];
+          const src = np.getElementsByTagNameNS('*', 'content')[0];
+          if (label && src) toc.push({ ...resoudre(dossierDe(ncx.href), src.getAttribute('src')), titre: label.textContent, niveau: niv });
+          parcourirNp(np, niv + 1);
+        }
+      };
+      if (navMap) parcourirNp(navMap, 0);
+    }
+  }
+  // Une entrée sans lien (ex. « Partie I » sans page) s'accroche au fichier de l'entrée suivante.
+  for (let i = toc.length - 1; i >= 0; i--) if (!toc[i].fichier && toc[i + 1]) { toc[i].fichier = toc[i + 1].fichier; toc[i].frag = toc[i + 1].frag; }
+
+  for (const item of spine) {
+    if (!/html|xml/.test(item.type) && !/\.x?html?$/i.test(item.href)) continue;
+    const txt = await lire(item.href);
+    if (!txt) continue;
+    const doc = parseXml(txt);
+    const corps = doc.getElementsByTagNameNS('*', 'body')[0] || doc.documentElement;
+    const ancres = new Map();
+    for (const e of toc.filter(e => e.fichier === item.href)) {
+      if (e.frag && corps.querySelector('[id="' + CSS.escape(e.frag) + '"]')) {
+        if (!ancres.has(e.frag)) ancres.set(e.frag, []);
+        ancres.get(e.frag).push(e);
+      } else ajouterChapitre(L, e.titre, e.niveau);
+    }
+    parcourirDom(corps, L, { ancres, titresSontChapitres: !toc.length });
+  }
+  return L;
+}
+
+// ---------- Texte brut (.txt, .md) ----------
+function decoderTexte(buf) {
+  let t = new TextDecoder('utf-8').decode(buf);
+  if (t.includes('�')) t = new TextDecoder('windows-1252').decode(buf);   // pas de l'UTF-8 valide : ancien fichier Windows
+  return t.replace(/^﻿/, '');
+}
+// Paragraphes séparés par une ligne vide (les retours à la ligne internes sont recollés) ;
+// « # Titre » (Markdown) ou une ligne seule « Chapitre … » deviennent des chapitres.
+function lireTexteBrut(buf) {
+  const L = nouveauLivre();
+  const texte = typeof buf === 'string' ? buf : decoderTexte(buf);
+  let para = [];
+  const vider = () => { if (para.length) ajouterPara(L, para.join(' ')); para = []; };
+  const lignes = texte.replace(/\r\n?/g, '\n').split('\n');
+  lignes.forEach((l, k) => {
+    const t = l.trim(), h = t.match(/^(#{1,3})\s+(.+)$/);
+    if (!t) return vider();
+    if (h) { vider(); return ajouterTitre(L, h[2].replace(/#+$/, ''), h[1].length - 1, true); }
+    const seule = !para.length && !(lignes[k + 1] || '').trim();
+    if (seule && t.length <= 60 && !/[.,;:!?…]$/.test(t) && /^(chapitre|partie|livre|prologue|épilogue|epilogue|chapter|part)\b/i.test(t)) {
+      vider(); return ajouterTitre(L, t, /^(partie|livre|part)\b/i.test(t) ? 0 : 1, true);
+    }
+    para.push(t);
+  });
+  vider();
+  return L;
+}
+
+// ---------- Pages web et HTML ----------
+// On ne garde que le texte de l'article : menus, pieds de page, publicités et commentaires sont retirés.
+const HORS_ARTICLE = 'script, style, noscript, iframe, svg, canvas, nav, header, footer, aside, form, button, select, figure, template, '
+  + '[role="navigation"], [role="banner"], [role="contentinfo"], [role="complementary"], [aria-hidden="true"], [hidden], '
+  + '.share, .social, .comments, #comments, .comment, .newsletter, .advert, .ad, .ads, .pub, .related, .breadcrumb, .cookie, .paywall';
+function texteDesParagraphes(e) { let n = 0; for (const p of e.querySelectorAll('p')) n += p.textContent.trim().length; return n; }
+function lireDocumentWeb(doc) {
+  const meta = sel => { const m = doc.querySelector(sel); return m ? (m.getAttribute('content') || '').trim() : ''; };
+  const h1 = doc.querySelector('article h1, main h1, h1');
+  // Titre de l'article : le <h1> d'abord ; le titre de l'onglet perd le nom du site (« … — Wikipédia », « … | Le Monde »).
+  const titre = ((h1 && h1.textContent.trim()) || meta('meta[property="og:title"]') || (doc.title || '').replace(/\s+[—–|·-]\s+[^—–|·-]+$/, ''))
+    .replace(/\s+/g, ' ').trim();
+  doc.querySelectorAll(HORS_ARTICLE).forEach(e => e.remove());
+  const corps = doc.body || doc.documentElement;
+  // Zone principale : <article> ou <main> s'ils contiennent l'essentiel du texte, sinon le bloc qui réunit le plus de paragraphes.
+  const totalP = texteDesParagraphes(corps);
+  let racine = [...doc.querySelectorAll('article, main, [role="main"]')].sort((a, b) => texteDesParagraphes(b) - texteDesParagraphes(a))[0];
+  if (!racine || texteDesParagraphes(racine) < totalP * 0.6) {
+    const scores = new Map();
+    for (const p of corps.querySelectorAll('p')) { const n = p.textContent.trim().length; if (n >= 40) scores.set(p.parentElement, (scores.get(p.parentElement) || 0) + n); }
+    let meilleur = null, max = 0;
+    for (const [e, s] of scores) if (s > max) { max = s; meilleur = e; }
+    racine = meilleur || corps;
+    while (racine.parentElement && racine !== corps && texteDesParagraphes(racine) < totalP * 0.7) racine = racine.parentElement;
+  }
+  const L = nouveauLivre();
+  L.titre = titre;
+  const dejaTitre = titre && [...racine.querySelectorAll('h1,h2')].some(h => h.textContent.trim() === titre);
+  if (titre && !dejaTitre) ajouterTitre(L, titre, 0, true);
+  parcourirDom(racine, L, { titresSontChapitres: true });
+  return L;
+}
+function lireHtml(buf) {
+  return lireDocumentWeb(new DOMParser().parseFromString(typeof buf === 'string' ? buf : decoderTexte(buf), 'text/html'));
+}
+// Texte importé (collé, page web, partage) : enregistré comme une petite page HTML propre, reconstruite à partir du texte seul.
+function serialiserLivre(L, source) {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let h = `<!doctype html>\n<html lang="fr"><head><meta charset="utf-8"><title>${esc(L.titre)}</title>`
+    + (source ? `<meta name="kdence-source" content="${esc(source).replace(/"/g, '&quot;')}">` : '') + '</head><body><article>\n';
+  for (const b of L.blocs) {
+    if (b.type === 'h') { h += `<h2>${esc(b.texte)}</h2>\n`; continue; }
+    let t = '';
+    for (let j = b.debut; j < b.fin; j++) t += L.mots[j].replace(/ /g, ' ') + (j < b.fin - 1 && !L.colle[j] ? ' ' : '');
+    h += `<p>${esc(t)}</p>\n`;
+  }
+  return h + '</article></body></html>\n';
+}
+function nomDeFichier(titre) {
+  return (titre || 'Texte').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80).replace(/[. ]+$/, '') || 'Texte';
+}
+async function importerTexte(L, source) {
+  if (L.mots.length < MOTS_MIN_IMPORT) throw new Error('Pas assez de texte à lire.');
+  const nom = nomDeFichier(L.titre) + '.html';
+  fermerPanneau();
+  await ouvrirFichier(new File([serialiserLivre(L, source)], nom, { type: 'text/html' }));
+}
+async function chargerPageWeb(adresse) {
+  adresse = adresse.trim();
+  if (!/^https?:\/\//i.test(adresse)) adresse = 'https://' + adresse;
+  let r;
+  if (modeBiblio) r = await api('api/page?url=' + encodeURIComponent(adresse));
+  else {
+    // Wikipédia, Wikisource… proposent une version de chaque page lisible directement par le navigateur.
+    const u = new URL(adresse), wiki = /\.(wikipedia|wikisource|wikibooks|wikinews)\.org$/.test(u.hostname) && u.pathname.match(/^\/wiki\/(.+)$/);
+    const cible = wiki ? `${u.origin}/api/rest_v1/page/html/${wiki[1]}` : adresse;
+    try { r = await fetch(cible); }
+    catch { throw new Error(PAGE_NON_LISIBLE); }        // le site interdit la lecture directe (CORS) ou pas de réseau
+    if (!r.ok) throw new Error('La page a répondu « ' + r.status + ' ».');
+  }
+  const brut = await r.text();
+  const L = /text\/plain/i.test(r.headers.get('content-type') || '') ? lireTexteBrut(brut) : lireHtml(brut);
+  if (!L.titre) L.titre = new URL(adresse).hostname;
+  if (L.mots.length < MOTS_MIN_IMPORT) throw new Error('Aucun article lisible trouvé sur cette page.');
+  return { L, adresse };
+}
+const PAGE_NON_LISIBLE = 'Ce site ne se laisse pas lire directement depuis le téléphone. Sur la page, faites un appui long sur le texte, '
+  + '« Tout sélectionner », puis « Partager » → Kdence (ou copiez le texte et utilisez « Coller un texte »).';
+
+function ouvrirCollage(texteInitial = '', titreInitial = '') {
+  const f = document.createDocumentFragment();
+  const titre = el('input'); titre.type = 'text'; titre.className = 'champ'; titre.placeholder = 'Titre (facultatif)'; titre.value = titreInitial;
+  const zone = el('textarea'); zone.className = 'champ'; zone.rows = 12; zone.placeholder = 'Collez ici le texte à lire…'; zone.value = texteInitial;
+  const info = el('p', '', 'note');
+  const ok = el('button', 'Lire ce texte', 'btn-principal');
+  ok.onclick = async () => {
+    const L = lireTexteBrut(zone.value);
+    L.titre = titre.value.trim() || zone.value.trim().split(/\s+/).slice(0, 6).join(' ');
+    try { await importerTexte(L); } catch (e) { info.textContent = e.message; }
+  };
+  f.append(titre, zone, ok, info);
+  ouvrirPanneau('Coller un texte', f);
+  if (!texteInitial) setTimeout(() => zone.focus(), 50);
+}
+function ouvrirPageWeb(adresseInitiale = '') {
+  const f = document.createDocumentFragment();
+  const champ = el('input'); champ.type = 'url'; champ.className = 'champ'; champ.placeholder = 'https://…'; champ.value = adresseInitiale;
+  const info = el('p', modeBiblio ? '' : 'Astuce : sur le téléphone, le plus simple est « Partager » → Kdence depuis le navigateur.', 'note');
+  const ok = el('button', 'Lire la page', 'btn-principal');
+  const lancer = async () => {
+    if (!champ.value.trim()) return;
+    ok.disabled = true; info.textContent = 'Chargement de la page…';
+    try { const { L, adresse } = await chargerPageWeb(champ.value); await importerTexte(L, adresse); }
+    catch (e) { info.textContent = e.message; }
+    finally { ok.disabled = false; }
+  };
+  ok.onclick = lancer;
+  champ.onkeydown = e => { if (e.key === 'Enter') lancer(); };
+  f.append(champ, ok, info);
+  ouvrirPanneau('Lire une page web', f);
+  if (adresseInitiale) lancer(); else setTimeout(() => champ.focus(), 50);
+}
+// Partage Android (« Partager » → Kdence) : texte sélectionné ou adresse d'une page.
+// Texte assez long → lu tel quel ; sinon une adresse → page web ; sinon texte court → fenêtre « Coller » préremplie.
+function analyserPartage(titre, texte, adresse) {
+  texte = (texte || '').trim(); titre = (titre || '').trim();
+  const lien = (adresse || '').trim() || (texte.match(/https?:\/\/\S+/) || [''])[0];
+  const sansLien = lien ? texte.replace(lien, '').trim() : texte;
+  if (sansLien.split(/\s+/).filter(Boolean).length >= MOTS_MIN_IMPORT)
+    return { action: 'texte', texte: sansLien, titre: titre || sansLien.split(/\s+/).slice(0, 6).join(' '), source: lien || null };
+  if (lien) return { action: 'page', adresse: lien };
+  if (texte) return { action: 'coller', texte, titre };
+  return { action: 'rien' };
+}
+function traiterPartage(titre, texte, adresse) {
+  const p = analyserPartage(titre, texte, adresse);
+  if (p.action === 'texte') {
+    const L = lireTexteBrut(p.texte); L.titre = p.titre;
+    return importerTexte(L, p.source).catch(e => { $('message').textContent = e.message; });
+  }
+  if (p.action === 'page') return ouvrirPageWeb(p.adresse);
+  if (p.action === 'coller') return ouvrirCollage(p.texte, p.titre);
+}
+
+// ---------- Word (.docx) ----------
+async function lireDocx(buf) {
+  const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
+  const doc = new DOMParser().parseFromString('<body>' + value + '</body>', 'text/html');
+  const L = nouveauLivre();
+  parcourirDom(doc.body, L, { titresSontChapitres: true });
+  return L;
+}
+
+// ---------- PDF ----------
+async function lirePdf(buf) {
+  if (window.PDF_WORKER_B64 && !lirePdf.worker) {
+    const bin = atob(window.PDF_WORKER_B64), octets = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+    lirePdf.worker = URL.createObjectURL(new Blob([octets], { type: 'text/javascript' }));
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = lirePdf.worker || 'lib/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const L = nouveauLivre();
+  try { const meta = await pdf.getMetadata(); L.titre = (meta.info && meta.info.Title || '').trim(); } catch {}
+
+  // Signets du PDF -> chapitres (page de départ)
+  const chapPages = {};
+  const parcourir = async (items, niv) => {
+    for (const it of items || []) {
+      try {
+        let dest = it.dest;
+        if (typeof dest === 'string') dest = await pdf.getDestination(dest);
+        if (dest && dest[0] != null) {
+          const idx = typeof dest[0] === 'number' ? dest[0] : await pdf.getPageIndex(dest[0]);
+          (chapPages[idx] = chapPages[idx] || []).push({ titre: it.title, niveau: niv });
+        }
+      } catch {}
+      await parcourir(it.items, niv + 1);
+    }
+  };
+  try { await parcourir(await pdf.getOutline(), 0); } catch {}
+
+  L.pagesDebut = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    if (p % 10 === 0) $('chargement').textContent = `Analyse du livre… page ${p} / ${pdf.numPages}`;
+    L.pagesDebut.push(L.mots.length);
+    for (const c of chapPages[p - 1] || []) ajouterChapitre(L, c.titre, c.niveau);
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    for (const para of paragraphesPdf(tc.items)) ajouterPara(L, para, p);
+    page.cleanup();
+  }
+  return L;
+}
+
+// Regroupe les morceaux de texte d'une page PDF en lignes, puis en paragraphes.
+function paragraphesPdf(items) {
+  const lignes = [];
+  let cour = null;
+  for (const it of items) {
+    if (it.str === undefined) continue;
+    const x = it.transform[4], y = it.transform[5], h = Math.abs(it.transform[3]) || it.height || 10;
+    if (!cour || Math.abs(y - cour.y) > h * 0.5) {
+      if (cour && it.str.trim() === '') continue;
+      cour = { texte: '', y, x, xFin: x, h };
+      lignes.push(cour);
+    } else if (it.str && x - cour.xFin > h * 0.2 && !/\s$/.test(cour.texte) && !/^\s/.test(it.str)) cour.texte += ' ';
+    cour.texte += it.str;
+    if (it.str.trim()) cour.xFin = Math.max(cour.xFin, x + (it.width || 0));
+    if (it.hasEOL) cour = null;
+  }
+  const utiles = lignes.filter(l => l.texte.trim() && !/^\s*[-–—]?\s*\d{1,4}\s*[-–—]?\s*$/.test(l.texte));
+  if (!utiles.length) return [];
+  const ecarts = [];
+  for (let i = 1; i < utiles.length; i++) { const e = utiles[i - 1].y - utiles[i].y; if (e > 0) ecarts.push(e); }
+  ecarts.sort((a, b) => a - b);
+  const ecartType = ecarts.length ? ecarts[Math.floor(ecarts.length / 2)] : 14;
+  const xMin = Math.min(...utiles.map(l => l.x)), xMax = Math.max(...utiles.map(l => l.xFin));
+
+  const paras = [];
+  let texte = '';
+  utiles.forEach((l, i) => {
+    const t = l.texte.replace(/\s+/g, ' ').trim();
+    if (i > 0) {
+      const prec = utiles[i - 1];
+      const ecart = prec.y - l.y;
+      const finPhrase = /[.!?…:»”]$/.test(texte);
+      const nouveau = ecart > ecartType * 1.45 || ecart < 0
+        || (finPhrase && prec.xFin < xMax - l.h * 3)
+        || (finPhrase && l.x > xMin + l.h * 0.8);
+      if (nouveau) { paras.push(texte); texte = t; return; }
+      if (/\p{L}-$/u.test(texte) && /^\p{Ll}/u.test(t)) texte = texte.slice(0, -1) + t;
+      else texte += ' ' + t;
+    } else texte = t;
+  });
+  if (texte) paras.push(texte);
+  return paras;
+}
+
+// ---------- Index (pages, chapitres, phrases) ----------
+function preparer(L) {
+  const n = L.mots.length;
+  L.nbPages = L.pagesDebut ? L.pagesDebut.length : Math.max(1, Math.ceil(n / MOTS_PAR_PAGE));
+  L.chapitres.sort((a, b) => a.debut - b.debut);
+  const pile = [];
+  for (const c of L.chapitres) {
+    pile.length = c.niveau; pile[c.niveau] = c.titre;
+    const pleins = pile.filter(Boolean);
+    c.affiche = pleins[pleins.length - 1];
+    c.parent = pleins.slice(0, -1).join(' · ');
+  }
+  L.debutBloc = new Uint8Array(n + 1);
+  for (const b of L.blocs) if (b.type === 'p') L.debutBloc[b.debut] = 1;
+  preparerRythme(L);
+}
+
+// ---------- Rythme ----------
+const ELISION = /^(?:jusqu|lorsqu|puisqu|quoiqu|qu|[ldjmnstc])['’]/i;
+function formeLexique(m) {
+  return m.toLowerCase().replace(/’/g, "'").replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').replace(ELISION, '');
+}
+// 1 = très fréquent, 2 = rare, 0 = sinon. Un nom propre (majuscule hors début de phrase) n'est jamais rare.
+function classeFrequence(L, j) {
+  if (!FREQ) return 0;
+  const f = formeLexique(L.mots[j]);
+  if (!f || /\d/.test(f)) return 0;
+  if (FREQ.tres.has(f)) return 1;
+  if (FREQ.connus.has(f)) return 0;
+  const tete = L.mots[j].replace(/^[^\p{L}\p{N}]+/u, '').replace(ELISION, '');
+  if (/^\p{Lu}/u.test(tete) && !debutPhrase(L, j)) return 0;
+  return 2;
+}
+function finDeMot(m) { return m.replace(/[ »"”’)\]]+$/, ''); }
+// Pour chaque mot : multiplicateur de la base, fin de phrase (bit 1), fin de paragraphe (bit 2).
+// Les sommes cumulées donnent la durée de n'importe quel passage instantanément, quelle que soit la vitesse.
+function preparerRythme(L) {
+  const n = L.mots.length;
+  L.mult = new Float32Array(n); L.fin = new Uint8Array(n);
+  for (const b of L.blocs) if (b.type === 'p' && b.fin > b.debut) L.fin[b.fin - 1] = 2;
+  for (let j = 0; j < n; j++) {
+    const m = L.mots[j], lettres = (m.match(/[\p{L}\p{N}]/gu) || []).length;
+    const c = prefs.rythmeFrequence ? classeFrequence(L, j) : 0;
+    const fin = finDeMot(m);
+    L.mult[j] = (lettres > SEUIL_LONG ? FACTEUR_LONG : 1) * (c === 1 ? FACTEUR_TRES_FREQUENT : c === 2 ? FACTEUR_RARE : 1)
+      + (/[,;:]$/.test(fin) ? PAUSE_VIRGULE : 0);
+    if (/[.!?…]$/.test(fin)) L.fin[j] |= 1;
+  }
+  L.cumMult = new Float64Array(n + 1); L.cumFin = new Int32Array(n + 1); L.cumPara = new Int32Array(n + 1);
+  for (let j = 0; j < n; j++) {
+    L.cumMult[j + 1] = L.cumMult[j] + L.mult[j];
+    L.cumFin[j + 1] = L.cumFin[j] + (L.fin[j] & 1);
+    L.cumPara[j + 1] = L.cumPara[j] + (L.fin[j] >> 1);
+  }
+}
+// Base en ms par mot. Avec « débit réel », elle est corrigée pour que le débit moyen du livre égale la consigne.
+function baseMs(L) {
+  const consigne = 60000 / prefs.vitesse;
+  if (!prefs.debitReel || !L) return consigne;
+  const n = L.mots.length, M = L.cumMult[n], nF = L.cumFin[n], nP = L.cumPara[n];
+  const reste = consigne * n - nP * prefs.pauseParagraphe;
+  let b = reste / (M + nF);                                  // cas où la base dépasse la pause de fin de phrase
+  if (b < prefs.pauseFinPhrase) b = (reste - nF * prefs.pauseFinPhrase) / M;
+  return Math.max(b, 10);
+}
+function totalMs(L, a, b) { // durée des mots a .. b-1
+  const base = baseMs(L);
+  return base * (L.cumMult[b] - L.cumMult[a]) + (L.cumFin[b] - L.cumFin[a]) * Math.max(base, prefs.pauseFinPhrase)
+    + (L.cumPara[b] - L.cumPara[a]) * prefs.pauseParagraphe;
+}
+// d = base · f_longueur · f_fréquence (+ 0,4 · base après , ; :) + pause de fin de phrase ; la pause de paragraphe est à part (écran vide).
+function dureeMot(L, j) {
+  const base = baseMs(L);
+  return { mot: base * L.mult[j] + (L.fin[j] & 1 ? Math.max(base, prefs.pauseFinPhrase) : 0), vide: L.fin[j] & 2 ? prefs.pauseParagraphe : 0 };
+}
+function formatDuree(ms) {
+  const min = Math.round(ms / 60000);
+  if (min < 1) return '< 1 min';
+  if (min < 60) return min + ' min';
+  return Math.floor(min / 60) + ' h ' + String(min % 60).padStart(2, '0');
+}
+function chercherDernier(tab, i, cle) { // dernier index k tel que cle(tab[k]) <= i
+  let lo = 0, hi = tab.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (cle(tab[m]) <= i) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+function pageDe(L, i) { return L.pagesDebut ? chercherDernier(L.pagesDebut, i, x => x) + 1 : Math.floor(i / MOTS_PAR_PAGE) + 1; }
+function chapitreDe(L, i) { return chercherDernier(L.chapitres, i, c => c.debut); }
+function finPhrase(m) { return /[.!?…][ »"”’)\]]*$/.test(m); }
+function debutPhrase(L, j) { return j <= 0 || L.debutBloc[j] || finPhrase(L.mots[j - 1]); }
+
+// ---------- Lecteur ----------
+const E = { L: null, i: 0, joue: false, minuteur: null, prochain: 0, source: null, nom: '', derniereSauvegarde: 0, fenetre: null,
+  positionChoisie: false, rampe: 0, mode: 'mot', ligneGuide: null, finGroupe: 1, termine: null,
+  marques: [], session: null, tJeu: null, actifYeux: 0, surFin: null };
+
+function demarrerLecteur(L, source, nom, prog) {
+  terminerSession();
+  Object.assign(E, { L, source, nom, i: 0, joue: false, fenetre: null, surFin: null, actifYeux: 0 });
+  // Positions enregistrées avec un autre découpage : recalage au prorata.
+  const recaler = m => Math.min(L.mots.length - 1, prog.total && prog.total !== L.mots.length ? Math.round(m / prog.total * L.mots.length) : m);
+  if (prog && prog.mot) E.i = recaler(prog.mot);
+  E.marques = prog && prog.marques ? prog.marques.map(m => ({ ...m, mot: recaler(m.mot) })) : [];
+  $('lecteur').classList.toggle('test', source.type === 'test');
+  if (prog && prog.vitesse) prefs.vitesse = prog.vitesse;
+  E.mode = prog && prog.mode === 'guide' ? 'guide' : 'mot';
+  $('modeLecture').value = E.mode;
+  $('vitesse').value = prefs.vitesse;
+  $('pivot').checked = prefs.pivot;
+  montrerPage('lecteur');
+  document.title = L.titre + ' — Kdence';
+  pause();
+}
+
+function majEntete() {
+  const L = E.L, i = E.i;
+  const k = chapitreDe(L, i);
+  const titre = k >= 0 ? L.chapitres[k].affiche : L.titre;
+  const parent = k >= 0 ? L.chapitres[k].parent : '';
+  if ($('chapitre').textContent !== titre) { $('chapitre').textContent = titre; $('chapitre').title = titre; }
+  if ($('parent').textContent !== parent) $('parent').textContent = parent;
+  const pc = Math.floor(i / L.mots.length * 100);
+  const texte = `${pageDe(L, i)} / ${L.nbPages}`;
+  if ($('numPage').textContent !== texte) $('numPage').textContent = texte;
+  $('pourcent').textContent = pc + ' %';
+  $('avance').style.width = (i / L.mots.length * 100) + '%';
+  // Débit réel du chapitre et temps restants (chapitre, livre)
+  const n = L.mots.length;
+  const a = k >= 0 ? L.chapitres[k].debut : 0, b = k + 1 < L.chapitres.length ? L.chapitres[k + 1].debut : n;
+  const reel = b > a ? Math.round((b - a) / totalMs(L, a, b) * 60000) : prefs.vitesse;
+  const t1 = 'réel ≈ ' + reel, t2 = `chap. ${formatDuree(totalMs(L, i, b))} · livre ${formatDuree(totalMs(L, i, n))}`;
+  if ($('reel').textContent !== t1) $('reel').textContent = t1;
+  if ($('restant').textContent !== t2) $('restant').textContent = t2;
+}
+
+// La lettre pivot est la lettre centrale du mot (lettres et chiffres seulement) ;
+// pour un nombre pair de lettres, c'est la première des deux lettres centrales.
+function indicePivot(caracteres) {
+  const lettres = [];
+  caracteres.forEach((c, k) => { if (/[\p{L}\p{N}]/u.test(c)) lettres.push(k); });
+  return lettres.length ? lettres[Math.ceil(lettres.length / 2) - 1] : 0;
+}
+// Groupe affiché à partir du mot i (fin exclue) : jusqu'à prefs.motsParGroupe mots, sans sortir du paragraphe,
+// sans couper un mot composé, et (option) en s'arrêtant après une virgule ou un point.
+function finGroupe(L, i) {
+  const n = L.mots.length, taille = prefs.motsParGroupe;
+  if (taille <= 1) return Math.min(n, i + 1);
+  let j = i, mots = 0;
+  while (j < n) {
+    if (j > i && L.debutBloc[j]) break;
+    if (!(j > i && L.colle[j - 1])) { if (mots === taille) break; mots++; }   // un morceau de mot composé ne compte pas
+    j++;
+    if (L.colle[j - 1]) continue;
+    if (prefs.groupeCoupe && /[,;:.!?…]$/.test(finDeMot(L.mots[j - 1]))) break;
+  }
+  return Math.max(j, i + 1);
+}
+function texteGroupe(L, a, b) {
+  let t = '';
+  for (let j = a; j < b; j++) t += L.mots[j] + (j < b - 1 && !L.colle[j] ? ' ' : '');
+  return t;
+}
+function afficherMot() {
+  E.finGroupe = finGroupe(E.L, E.i);
+  if (E.mode === 'guide') return surlignerCourant();
+  const m = texteGroupe(E.L, E.i, E.finGroupe);
+  const el = $('mot'), [g, pv, d] = el.children;
+  const [avant, gm] = g.children, [dm, apres] = d.children;
+  const car = [...m], p = indicePivot(car);
+  gm.textContent = car.slice(0, p).join('');
+  pv.textContent = car[p] || '';
+  dm.textContent = car.slice(p + 1).join('');
+  const v = prefs.motsVoisins ? motsVoisins(E.L, E.i, E.finGroupe) : { avant: '', apres: '' };
+  avant.textContent = v.avant; apres.textContent = v.apres;
+  el.classList.toggle('pivot', prefs.pivot);
+  el.classList.toggle('reperes', prefs.reperes);
+  // Mots longs : on réduit la police pour que la plus longue moitié du mot (sans les voisins) tienne dans 46 % de la largeur.
+  // Sur écran étroit, la limite laisse aussi la place du bouton dictionnaire (bord droit).
+  el.style.setProperty('--reduction', 1);
+  const demi = Math.max(gm.offsetWidth, dm.offsetWidth) + pv.offsetWidth / 2;
+  const limite = Math.min(el.clientWidth * 0.46, el.clientWidth / 2 - MARGE_BOUTON_DICO);
+  if (demi > limite) el.style.setProperty('--reduction', limite / demi);
+  // Voisin coupé au bord : fondu plutôt que coupure nette.
+  g.classList.toggle('deborde', avant.offsetWidth + gm.offsetWidth > g.clientWidth + 1);
+  d.classList.toggle('deborde', dm.offsetWidth + apres.offsetWidth > d.clientWidth + 1);
+  afficherPhrase();
+}
+function viderMot() { if (E.mode !== 'guide') for (const s of $('mot').querySelectorAll('span:not(.g):not(.d)')) s.textContent = ''; }
+// Mots précédents et suivants affichés en transparence, sans sortir du paragraphe.
+function motsVoisins(L, i, fin = i + 1) {
+  let avant = '', apres = '';
+  for (let j = i - 1, n = 0; j >= 0 && n < MOTS_VOISINS && !L.debutBloc[j + 1]; j--, n++) avant = L.mots[j] + (L.colle[j] ? '' : ' ') + avant;
+  for (let j = fin, n = 0; j < L.mots.length && n < MOTS_VOISINS && !L.debutBloc[j]; j++, n++) apres += (L.colle[j - 1] ? '' : ' ') + L.mots[j];
+  return { avant, apres };
+}
+
+// Phrase en cours, en petit sous le mot (au plus ~30 mots autour de la position).
+function afficherPhrase() {
+  const z = $('phrase');
+  if (!prefs.phraseEnCours || E.mode === 'guide') { z.classList.add('cache'); return; }
+  const L = E.L;
+  let a = E.i; while (a > 0 && !debutPhrase(L, a)) a--;
+  let b = E.i + 1; while (b < L.mots.length && !debutPhrase(L, b)) b++;
+  const de = Math.max(a, E.i - 10), a2 = Math.min(b, de + 30);
+  const frag = document.createDocumentFragment();
+  if (de > a) frag.append('… ');
+  for (let j = de; j < a2; j++) {
+    if (j >= E.i && j < E.finGroupe) { const s = document.createElement('b'); s.textContent = L.mots[j]; frag.append(s); } else frag.append(L.mots[j]);
+    if (j < a2 - 1 && !L.colle[j]) frag.append(' ');
+  }
+  if (a2 < b) frag.append(' …');
+  z.replaceChildren(frag);
+  z.classList.remove('cache');
+}
+
+// Défilement guidé : le texte complet reste affiché et le mot courant est surligné au même rythme.
+function surlignerCourant() {
+  const page = $('pageTexte');
+  let s = page.querySelector('span[data-i="' + E.i + '"]');
+  if (!s) { afficherTexte(); s = page.querySelector('span[data-i="' + E.i + '"]'); }
+  page.querySelectorAll('.ici').forEach(x => { if (+x.dataset.i < E.i || +x.dataset.i >= E.finGroupe) x.classList.remove('ici'); });
+  if (!s) return;
+  for (let j = E.i; j < E.finGroupe; j++) { const x = page.querySelector('span[data-i="' + j + '"]'); if (x) x.classList.add('ici'); }
+  const t = $('texte'), haut = s.offsetTop;
+  if (haut !== E.ligneGuide) {      // nouvelle ligne : on garde la ligne courante vers 40 % de la hauteur
+    E.ligneGuide = haut;
+    t.scrollTo({ top: Math.max(0, haut - t.clientHeight * 0.4), behavior: 'smooth' });
+  }
+}
+function changerMode(mode) {
+  E.mode = mode === 'guide' ? 'guide' : 'mot';
+  $('modeLecture').value = E.mode;
+  E.ligneGuide = null;
+  if (E.joue) { afficherVue(); afficherMot(); }
+  if (E.L) sauvegarder();
+}
+// Vue affichée : mot seul en lecture mot à mot, texte complet en pause ou en défilement guidé.
+function afficherVue() {
+  const motSeul = E.joue && E.mode !== 'guide';
+  $('mot').classList.toggle('cache', !motSeul);
+  $('texte').classList.toggle('cache', motSeul);
+  if (!motSeul) $('phrase').classList.add('cache');
+}
+
+function jouer() {
+  if ((E.i >= E.L.mots.length - 1 || E.termine === E.i) && E.L.mots.length > 1) { E.i = 0; E.positionChoisie = true; }
+  E.termine = null;
+  // Reprise après une pause : on relit quelques mots, sans remonter avant le début de la phrase.
+  if (!E.positionChoisie && prefs.reculReprise > 0) {
+    let debut = E.i; while (debut > 0 && !debutPhrase(E.L, debut)) debut--;
+    E.i = Math.max(debut, E.i - prefs.reculReprise);
+  }
+  E.positionChoisie = false;
+  E.rampe = 0;
+  E.joue = true;
+  E.tJeu = performance.now();
+  if (!E.session && E.source.type !== 'test')
+    E.session = { livre: E.L.titre, debut: new Date().toISOString(), actifMs: 0, mots: 0, vitesse: prefs.vitesse };
+  $('lecteur').classList.add('joue');
+  $('jouer').textContent = '❚❚';
+  E.ligneGuide = null;
+  afficherVue();
+  E.prochain = performance.now();
+  verrouillerEcran();
+  boucle();
+}
+function boucle() {
+  if (!E.joue) return;
+  if (prefs.pauseYeux && E.source.type !== 'test' && E.actifYeux + performance.now() - E.tJeu >= prefs.pauseYeuxMin * 60000) {
+    pause(); E.actifYeux = 0; pauseYeux(); return;
+  }
+  afficherMot(); majEntete();
+  const maintenant = performance.now();
+  if (E.prochain < maintenant - 300) E.prochain = maintenant;
+  // Un groupe de mots reste affiché la somme des durées de ses mots : le débit ne change pas.
+  const debut = E.i, fin = E.finGroupe;
+  let dm = 0, vide = 0;
+  for (let j = debut; j < fin; j++) { const d = dureeMot(E.L, j); dm += d.mot; vide = d.vide; }
+  if (E.rampe < prefs.demarrage) { dm /= VITESSE_DEPART + (1 - VITESSE_DEPART) * Math.min(E.rampe, prefs.demarrage) / prefs.demarrage; E.rampe += fin - debut; }
+  E.prochain += dm;
+  if (Date.now() - E.derniereSauvegarde > 15000) sauvegarder();
+  const attendre = () => Math.max(0, E.prochain - performance.now());
+  const suivant = () => { E.i = fin; if (E.session) E.session.mots += fin - debut; boucle(); };
+  const d = { vide };
+  E.minuteur = setTimeout(() => {
+    if (fin >= E.L.mots.length) {
+      if (E.session) E.session.mots += fin - debut;
+      E.termine = E.i;                // fin du livre : un nouvel appui sur Lecture repart du début
+      pause();
+      if (E.surFin) { const f = E.surFin; E.surFin = null; f(); }
+      return;
+    }
+    if (!d.vide) return suivant();
+    viderMot();                       // fin de paragraphe : écran vide
+    E.prochain += d.vide;
+    E.minuteur = setTimeout(suivant, attendre());
+  }, attendre());
+}
+function pause(sauver = true) {
+  E.joue = false;
+  E.positionChoisie = false;
+  if (E.tJeu != null) {           // temps de lecture active (pauses exclues)
+    const d = performance.now() - E.tJeu;
+    E.actifYeux += d;
+    if (E.session) E.session.actifMs += d;
+    E.tJeu = null;
+  }
+  clearTimeout(E.minuteur);
+  libererEcran();
+  $('lecteur').classList.remove('joue');
+  $('jouer').textContent = '▶';
+  afficherVue();
+  majEntete();
+  afficherTexte();
+  if (sauver) sauvegarder();
+}
+function basculer() { E.joue ? pause() : jouer(); }
+
+// Position choisie par l'utilisateur : pas de retour en arrière à la reprise.
+function allerA(j) {
+  E.i = Math.max(0, Math.min(E.L.mots.length - 1, j));
+  E.positionChoisie = true;
+  if (E.joue) { afficherMot(); majEntete(); E.prochain = performance.now(); clearTimeout(E.minuteur); boucle(); }
+  else { majEntete(); afficherTexte(); }
+}
+function phrasePrec() { let j = E.i - 1; while (j > 0 && !debutPhrase(E.L, j)) j--; allerA(j); }
+function phraseSuiv() { let j = E.i + 1; while (j < E.L.mots.length - 1 && !debutPhrase(E.L, j)) j++; allerA(j); }
+function chapitrePrec() {
+  const c = E.L.chapitres; let k = chapitreDe(E.L, E.i);
+  if (k >= 0 && E.i - c[k].debut < 30) k--;
+  while (k > 0 && c[k - 1].debut === c[k].debut) k--;
+  allerA(k >= 0 ? c[k].debut : 0);
+}
+function rejouerPhrase() {
+  let j = E.i; while (j > 0 && !debutPhrase(E.L, j)) j--;
+  allerA(j);
+  if (!E.joue) jouer();
+}
+function chapitreSuiv() { const k = E.L.chapitres.findIndex(c => c.debut > E.i); if (k >= 0) allerA(E.L.chapitres[k].debut); }
+
+// Texte complet affiché pendant la pause (une fenêtre de paragraphes autour de la position).
+function afficherTexte(etendre) {
+  const L = E.L;
+  let k = chercherDernier(L.blocs, E.i, b => b.debut);
+  while (k > 0 && !(L.blocs[k].type === 'p' && L.blocs[k].fin > E.i)) k--;
+  if (!E.fenetre || etendre === undefined && (k < E.fenetre[0] + 5 || k > E.fenetre[1] - 5)) E.fenetre = [Math.max(0, k - 30), Math.min(L.blocs.length, k + 60)];
+  if (etendre === 'haut') E.fenetre[0] = Math.max(0, E.fenetre[0] - 60);
+  if (etendre === 'bas') E.fenetre[1] = Math.min(L.blocs.length, E.fenetre[1] + 60);
+  const [a, b] = E.fenetre;
+  const frag = document.createDocumentFragment();
+  if (a > 0) frag.appendChild(boutonPlus('↑ Afficher le texte précédent', 'haut'));
+  for (let x = a; x < b; x++) {
+    const bl = L.blocs[x];
+    if (bl.type === 'h') { const h = document.createElement('h3'); h.textContent = bl.texte; frag.appendChild(h); continue; }
+    const p = document.createElement('p');
+    for (let j = bl.debut; j < bl.fin; j++) {
+      const s = document.createElement('span');
+      s.dataset.i = j; s.textContent = L.mots[j];
+      if (j === E.i) s.className = 'ici';
+      p.appendChild(s);
+      if (j < bl.fin - 1 && !L.colle[j]) p.appendChild(document.createTextNode(' '));
+    }
+    frag.appendChild(p);
+  }
+  if (b < L.blocs.length) frag.appendChild(boutonPlus('↓ Afficher la suite', 'bas'));
+  const page = $('pageTexte');
+  page.replaceChildren(frag);
+  if (!etendre) { const ici = page.querySelector('.ici'); if (ici) ici.scrollIntoView({ block: 'center' }); }
+}
+function boutonPlus(texte, sens) {
+  const b = document.createElement('button'); b.className = 'plus'; b.textContent = texte;
+  b.onclick = () => {
+    const avant = $('texte').scrollHeight;
+    afficherTexte(sens);
+    if (sens === 'haut') $('texte').scrollTop += $('texte').scrollHeight - avant;
+  };
+  return b;
+}
+
+// ---------- Sauvegarde de la position ----------
+function etatProgression() {
+  const L = E.L;
+  return { mot: E.i, total: L.mots.length, page: pageDe(L, E.i), pages: L.nbPages, pourcentage: Math.floor(E.i / L.mots.length * 100),
+    vitesse: prefs.vitesse, titre: L.titre, fichier: E.nom, maj: new Date().toISOString(),
+    restantMs: Math.round(totalMs(L, E.i, L.mots.length)), mode: E.mode, marques: E.marques };
+}
+function sauvegarder(balise) {
+  if (!E.L || E.source.type === 'test') return;
+  E.derniereSauvegarde = Date.now();
+  // La session en cours est aussi gardée, au cas où l'application serait fermée sans prévenir.
+  if (E.session) ecrireLocal('lc:session-en-cours', { ...E.session, actifMs: E.session.actifMs + (E.tJeu != null ? performance.now() - E.tJeu : 0), fin: new Date().toISOString() });
+  const p = etatProgression();
+  if (E.source.type === 'biblio') {
+    progressions[E.source.cle] = p;
+    const corps = JSON.stringify({ nom: E.source.cle, progression: p });
+    if (balise && navigator.sendBeacon) navigator.sendBeacon('api/progression', new Blob([corps], { type: 'application/json' }));
+    else fetch('api/progression', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corps }).catch(() => {});
+  } else if (E.source.type === 'onedrive') odNoterProgression(E.source.cle, p, balise);
+  else ecrireLocal(E.source.cle, p);
+}
+
+// ---------- Panneau latéral (dictionnaire, listes) ----------
+function ouvrirPanneau(titre, contenu) {
+  reserverRetour();
+  $('panneauTitre').textContent = titre;
+  $('panneauCorps').replaceChildren(contenu);
+  $('panneauCorps').scrollTop = 0;
+  $('voile').classList.remove('cache');
+  $('panneau').classList.add('ouvert');
+  $('panneau').setAttribute('aria-hidden', 'false');
+}
+function fermerPanneau() {
+  $('voile').classList.add('cache');
+  $('panneau').classList.remove('ouvert');
+  $('panneau').setAttribute('aria-hidden', 'true');
+}
+const panneauOuvert = () => $('panneau').classList.contains('ouvert');
+function el(tag, texte, classe) { const e = document.createElement(tag); if (texte != null) e.textContent = texte; if (classe) e.className = classe; return e; }
+
+// ---------- Dictionnaire (Wiktionnaire) ----------
+// Seul le mot cherché est envoyé, au moment de l'appui. Le HTML reçu n'est jamais inséré : on n'en lit que le texte.
+const WIKTIONNAIRE_API = 'https://fr.wiktionary.org/w/api.php?action=parse&prop=text&format=json&formatversion=2&redirects=1&origin=*&page=';
+const RUBRIQUES_IGNOREES = /^(Étymologie|Prononciation|Anagrammes|Voir aussi|Références|Homophones|Paronymes|Traductions|Synonymes|Quasi-synonymes|Antonymes|Dérivés|Apparentés|Vocabulaire|Hyperonymes|Hyponymes|Variantes|Notes|Attestations|Abréviations|Méronymes|Holonymes|Gentilés|Diminutifs|Augmentatifs|Proverbes|Faux-amis|Phrases|Expressions|Composés|Forme alternative|Hyperonyme|Troponymes|Liens|Bibliographie)/i;
+
+function cacheDico() { return lireLocal('lc:dico') || {}; }
+function memoriserDico(page, res) {
+  const c = cacheDico();
+  delete c[page]; c[page] = { r: res, t: Date.now() };
+  const cles = Object.keys(c);
+  for (const k of cles.slice(0, Math.max(0, cles.length - DICO_CACHE_MAX))) delete c[k];
+  ecrireLocal('lc:dico', c);
+}
+// null = page absente ou sans section Français ; exception = pas de réseau.
+async function pageWiktionnaire(page) {
+  const c = cacheDico()[page];
+  if (c) return c.r;
+  const j = await (await fetch(WIKTIONNAIRE_API + encodeURIComponent(page))).json();
+  const res = j.error ? null : analyserWiktionnaire(j.parse);
+  memoriserDico(page, res);
+  return res;
+}
+function analyserWiktionnaire(parse) {
+  const doc = new DOMParser().parseFromString(parse.text, 'text/html');
+  const racine = doc.querySelector('.mw-parser-output') || doc.body;
+  let francais = false, nature = null;
+  const sections = [], formes = [];
+  for (const bloc of racine.children) {
+    const h = bloc.matches('h2,h3,h4,h5,h6') ? bloc : bloc.classList.contains('mw-heading') ? bloc.querySelector('h2,h3,h4,h5,h6') : null;
+    if (h) {
+      const niveau = +h.tagName[1], titre = h.textContent.replace(/\s+/g, ' ').trim();
+      if (niveau === 2) { if (francais) break; francais = h.id === 'Français' || titre === 'Français'; nature = null; }
+      else if (francais) nature = niveau === 3 && !RUBRIQUES_IGNOREES.test(titre) ? titre : null;
+      continue;
+    }
+    if (!francais || !nature || bloc.tagName !== 'OL') continue;
+    const defs = [];
+    for (const li of bloc.children) {
+      if (li.tagName !== 'LI') continue;
+      const copie = li.cloneNode(true);
+      copie.querySelectorAll('ul, ol, dl, .example, sup, style, script').forEach(x => x.remove());
+      const texte = copie.textContent.replace(/\s+/g, ' ').trim();
+      if (!texte) continue;
+      defs.push(texte);
+      if (/^Forme/i.test(nature)) {     // forme fléchie : le dernier lien de la ligne mène au lemme
+        const liens = [...copie.querySelectorAll('a[href^="/wiki/"]')].map(a => decodeURIComponent(a.getAttribute('href').slice(6)).split('#')[0])
+          .filter(p => !p.includes(':'));
+        if (liens.length) formes.push({ ligne: texte, lemme: liens[liens.length - 1].replace(/_/g, ' ') });
+      }
+      if (defs.length >= DICO_DEFINITIONS_MAX) break;
+    }
+    if (defs.length) sections.push({ nature, defs });
+    nature = null;
+  }
+  return sections.length ? { titre: parse.title, sections, formes } : null;
+}
+
+// Mot à chercher : mot composé reconstitué, ponctuation et élision retirées, nom propre essayé tel quel.
+function candidatsDico(L, j) {
+  let a = j; while (a > 0 && L.colle[a - 1]) a--;
+  let b = j; while (b < L.mots.length - 1 && L.colle[b]) b++;
+  const nettoyer = m => m.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').replace(ELISION, '');
+  const complet = nettoyer(L.mots.slice(a, b + 1).join('')), morceau = nettoyer(L.mots[j]);
+  const liste = [];
+  for (const w of a < b ? [complet, morceau] : [complet]) {
+    if (!w) continue;
+    if (/\p{Lu}/u.test(w[0]) && !debutPhrase(L, a)) liste.push(w);
+    liste.push(w.toLowerCase());
+    if (w.includes("'")) liste.push(w.toLowerCase().replace(/'/g, '’'));
+  }
+  return { affiche: complet || morceau, candidats: [...new Set(liste)] };
+}
+
+async function chercherDefinition(j) {
+  if (E.joue) pause();
+  const L = E.L, { affiche, candidats } = candidatsDico(L, j);
+  if (!candidats.length) return;
+  ouvrirPanneau(affiche, el('p', 'Recherche…', 'vide'));
+  let res = null, horsLigne = false;
+  for (const c of candidats) {
+    try { res = await pageWiktionnaire(c); } catch { horsLigne = true; break; }
+    if (res) break;
+  }
+  let lemme = null;
+  if (res && res.formes.length && !res.sections.some(s => !/^Forme/i.test(s.nature))) {
+    try { lemme = await pageWiktionnaire(res.formes[0].lemme); } catch { horsLigne = true; }
+  }
+  if (res) noterVocabulaire(affiche, res.titre);
+  if (panneauOuvert() && $('panneauTitre').textContent === affiche) afficherDefinition(affiche, res, lemme, horsLigne);
+}
+function afficherDefinition(mot, res, lemme, horsLigne) {
+  const f = document.createDocumentFragment();
+  const sections = (r, f) => { for (const s of r.sections) { f.append(el('h3', s.nature)); const ol = el('ol'); s.defs.forEach(d => ol.append(el('li', d))); f.append(ol); } };
+  if (res) {
+    if (res.titre !== mot) f.append(el('p', 'Entrée : ' + res.titre, 'lemme'));
+    sections(res, f);
+    if (lemme) { f.append(el('h3', 'Définition de « ' + lemme.titre + ' »')); sections(lemme, f); }
+  } else f.append(el('p', horsLigne ? 'Pas de connexion.' : 'Aucune définition trouvée.', 'vide'));
+  const cible = encodeURIComponent((res && (lemme ? lemme.titre : res.titre)) || mot.toLowerCase());
+  const liens = el('div', null, 'liens');
+  for (const [nom, url] of [['Wiktionnaire', 'https://fr.wiktionary.org/wiki/'], ['CNRTL', 'https://www.cnrtl.fr/definition/'], ['Larousse', 'https://www.larousse.fr/dictionnaires/francais/']]) {
+    const a = el('a', nom); a.href = url + cible; a.target = '_blank'; a.rel = 'noopener'; liens.append(a);
+  }
+  f.append(liens);
+  ouvrirPanneau(mot, f);
+}
+
+// Mots cherchés, par livre (stockage local)
+function cleVocab() { return 'lc:vocab:' + (E.source.type === 'biblio' ? 'biblio:' : '') + E.source.cle; }
+function noterVocabulaire(mot, entree) {
+  const v = lireLocal(cleVocab()) || [];
+  v.push({ mot, entree, date: new Date().toISOString() });
+  ecrireLocal(cleVocab(), v);
+}
+function afficherVocabulaire() {
+  if (E.joue) pause();
+  const v = (lireLocal(cleVocab()) || []).slice().reverse();
+  const f = document.createDocumentFragment();
+  if (!v.length) f.append(el('p', 'Aucun mot cherché dans ce livre pour l\'instant.', 'vide'));
+  const ul = el('ul', null, 'liste-panneau');
+  for (const x of v) {
+    const li = el('li'); li.append(el('span', x.mot), el('small', new Date(x.date).toLocaleDateString('fr-FR')));
+    li.onclick = async () => {
+      ouvrirPanneau(x.mot, el('p', 'Recherche…', 'vide'));
+      try { const r = await pageWiktionnaire(x.entree); const lm = r && r.formes.length && !r.sections.some(s => !/^Forme/i.test(s.nature)) ? await pageWiktionnaire(r.formes[0].lemme) : null; afficherDefinition(x.mot, r, lm, false); }
+      catch { afficherDefinition(x.mot, null, null, true); }
+    };
+    ul.append(li);
+  }
+  f.append(ul);
+  if (v.length) {
+    const b = el('button', 'Exporter en fichier texte'); b.style.marginTop = '14px';
+    b.onclick = () => {
+      const texte = `Mots cherchés — ${E.L.titre}\n\n` + v.slice().reverse().map(x => `${x.date.slice(0, 10)}\t${x.mot}` + (x.entree !== x.mot ? `\t(${x.entree})` : '')).join('\n') + '\n';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([texte], { type: 'text/plain;charset=utf-8' }));
+      a.download = 'Mots cherchés - ' + E.L.titre.replace(/[\\/:*?"<>|]/g, '') + '.txt';
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    };
+    f.append(b);
+  }
+  ouvrirPanneau('Mots cherchés', f);
+}
+
+// ---------- Recherche dans le livre (sans tenir compte des majuscules ni des accents) ----------
+function normaliser(s) { return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/’/g, "'"); }
+function indexRecherche(L) {
+  if (L.recherche) return L.recherche;
+  const debuts = new Int32Array(L.mots.length);
+  let t = '';
+  for (let j = 0; j < L.mots.length; j++) { debuts[j] = t.length; t += normaliser(L.mots[j].replace(/ /g, ' ')); if (!L.colle[j]) t += ' '; }
+  return (L.recherche = { texte: t, debuts });
+}
+function rechercher(L, requete) {
+  const q = normaliser(requete).replace(/\s+/g, ' ').trim();
+  if (q.length < 2) return [];
+  const { texte, debuts } = indexRecherche(L), res = [];
+  for (let p = texte.indexOf(q); p >= 0 && res.length < RECHERCHE_MAX; p = texte.indexOf(q, p + 1)) {
+    const j = chercherDernier(debuts, p, x => x);
+    if (res[res.length - 1] !== j) res.push(j);
+  }
+  return res;
+}
+function extrait(L, j, avant = 3, apres = 5) {
+  const a = Math.max(0, j - avant), b = Math.min(L.mots.length, j + apres);
+  let t = a > 0 ? '… ' : '';
+  for (let k = a; k < b; k++) t += L.mots[k] + (k < b - 1 && !L.colle[k] ? ' ' : '');
+  return t + (b < L.mots.length ? ' …' : '');
+}
+function nomChapitre(L, j) { const k = chapitreDe(L, j); return k >= 0 ? L.chapitres[k].affiche : L.titre; }
+function ouvrirRecherche() {
+  if (E.joue) pause();
+  const f = document.createDocumentFragment();
+  const champ = el('input'); champ.type = 'search'; champ.id = 'champRecherche'; champ.placeholder = 'Mot ou expression…';
+  const info = el('p', '', 'note'), ul = el('ul', null, 'liste-panneau');
+  let minuteur;
+  champ.oninput = () => { clearTimeout(minuteur); minuteur = setTimeout(() => {
+    const res = rechercher(E.L, champ.value);
+    info.textContent = champ.value.trim().length < 2 ? '' : res.length ? `${res.length}${res.length >= RECHERCHE_MAX ? ' premiers' : ''} résultat${res.length > 1 ? 's' : ''}` : 'Aucun résultat.';
+    ul.replaceChildren(...res.map(j => {
+      const li = el('li'); const s = el('span');
+      s.append(el('small', nomChapitre(E.L, j) + ' · p. ' + pageDe(E.L, j)), el('br'), extrait(E.L, j));
+      li.append(s); li.onclick = () => { fermerPanneau(); allerA(j); };
+      return li;
+    }));
+  }, 150); };
+  f.append(champ, info, ul);
+  ouvrirPanneau('Rechercher', f);
+  setTimeout(() => champ.focus(), 50);
+}
+
+// ---------- Marque-pages (enregistrés avec la progression du livre) ----------
+function ajouterMarque() {
+  if (E.joue) pause();
+  E.marques.push({ mot: E.i, note: '', date: new Date().toISOString() });
+  E.marques.sort((a, b) => a.mot - b.mot);
+  sauvegarder();
+  afficherMarques(E.i);
+}
+function afficherMarques(nouvelle) {
+  if (E.joue) pause();
+  const f = document.createDocumentFragment();
+  const ajout = el('button', '＋ Marque-page ici'); ajout.onclick = ajouterMarque;
+  f.append(ajout);
+  if (!E.marques.length) f.append(el('p', 'Aucun marque-page dans ce livre.', 'vide'));
+  const ul = el('ul', null, 'liste-panneau'); let aFocaliser = null;
+  for (const m of E.marques) {
+    const li = el('li'); li.style.display = 'block';
+    const tete = el('div'); tete.style.display = 'flex'; tete.style.gap = '8px';
+    const titre = el('small', nomChapitre(E.L, m.mot) + ' · p. ' + pageDe(E.L, m.mot) + ' · ' + new Date(m.date).toLocaleDateString('fr-FR')); titre.style.flex = '1';
+    const suppr = el('button', 'Supprimer'); suppr.className = 'retirer';
+    suppr.onclick = e => { e.stopPropagation(); E.marques = E.marques.filter(x => x !== m); sauvegarder(); afficherMarques(); };
+    tete.append(titre, suppr);
+    const note = el('input'); note.type = 'text'; note.className = 'marque-note'; note.placeholder = 'Note (facultative)'; note.value = m.note || '';
+    note.onclick = e => e.stopPropagation();
+    note.onchange = () => { m.note = note.value; sauvegarder(); };
+    li.append(tete, el('p', extrait(E.L, m.mot, 0, 8), 'marque-extrait'), note);
+    li.onclick = () => { fermerPanneau(); allerA(m.mot); };
+    if (m.mot === nouvelle && !m.note) aFocaliser = note;
+    ul.append(li);
+  }
+  f.append(ul);
+  ouvrirPanneau('Marque-pages', f);
+  if (aFocaliser) setTimeout(() => aFocaliser.focus(), 50);
+}
+
+// ---------- Sessions et statistiques (stockage local) ----------
+function enregistrerSession(s) {
+  if (!s || s.actifMs < 3000) return;
+  const tout = lireLocal('lc:stats') || [];
+  tout.push({ ...s, actifMs: Math.round(s.actifMs), debit: Math.round(s.mots / (s.actifMs / 60000)) });
+  ecrireLocal('lc:stats', tout);
+}
+function terminerSession() {
+  if (E.joue) pause(false);
+  if (E.session) enregistrerSession({ ...E.session, fin: new Date().toISOString() });
+  E.session = null;
+  try { localStorage.removeItem('lc:session-en-cours'); } catch {}
+}
+// Session restée ouverte (application fermée brutalement) : on la range au démarrage.
+function recupererSession() {
+  const s = lireLocal('lc:session-en-cours');
+  if (s) { enregistrerSession(s); try { localStorage.removeItem('lc:session-en-cours'); } catch {} }
+}
+const jourLocal = d => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+function lundiDe(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
+function svg(tag, attrs, parent) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.append(e);
+  return e;
+}
+function afficherStats() {
+  montrerPage('stats');
+  const sessions = lireLocal('lc:stats') || [];
+  const aujourdhui = jourLocal(Date.now());
+  // Objectif du jour
+  const minJour = sessions.filter(s => jourLocal(s.debut) === aujourdhui).reduce((t, s) => t + s.actifMs, 0) / 60000;
+  const obj = $('objectifJour'); obj.replaceChildren();
+  if (prefs.objectif > 0) {
+    obj.append(el('p', `Aujourd'hui : ${Math.round(minJour)} / ${prefs.objectif} min` + (minJour >= prefs.objectif ? ' — objectif atteint' : '')));
+    const j = el('div', null, 'jauge'), i = el('i'); i.style.width = Math.min(100, minJour / prefs.objectif * 100) + '%'; j.append(i); obj.append(j);
+  } else obj.append(el('p', `Aujourd'hui : ${Math.round(minJour)} min de lecture.`, 'note'));
+
+  // Histogramme : mots lus par jour sur 30 jours (barres dessinées à la main)
+  const jours = [];
+  for (let k = 29; k >= 0; k--) { const d = new Date(); d.setDate(d.getDate() - k); jours.push({ cle: jourLocal(d), d, mots: 0 }); }
+  const parJour = Object.fromEntries(jours.map(j => [j.cle, j]));
+  for (const s of sessions) { const j = parJour[jourLocal(s.debut)]; if (j) j.mots += s.mots; }
+  const max = Math.max(...jours.map(j => j.mots)), pas = max <= 0 ? 100 : Math.pow(10, Math.floor(Math.log10(max)));
+  const haut = Math.max(pas, Math.ceil(max / pas) * pas);
+  const W = 600, H = 200, G = 44, B = 24, T = 8, l = (W - G) / 30;
+  const g = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'graphe', role: 'img', 'aria-label': 'Mots lus par jour sur 30 jours' });
+  for (const v of [0, haut / 2, haut]) {
+    const y = H - B - v / haut * (H - B - T);
+    svg('line', { x1: G, x2: W, y1: y, y2: y, class: 'grille' }, g);
+    svg('text', { x: G - 6, y: y + 4, 'text-anchor': 'end' }, g).textContent = v.toLocaleString('fr-FR');
+  }
+  jours.forEach((j, k) => {
+    const x = G + k * l, h = j.mots / haut * (H - B - T), y = H - B - h, w = l - 2;
+    const titre = `${j.d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} : ${j.mots.toLocaleString('fr-FR')} mots`;
+    svg('title', {}, svg('rect', { x, y: T, width: l, height: H - B - T, fill: 'transparent', class: 'cible' }, g)).textContent = titre;
+    if (h > 0) {
+      const r = Math.min(4, w / 2, h);   // extrémité arrondie, base posée sur l'axe
+      svg('title', {}, svg('path', { class: 'barre', d: `M${x + 1},${H - B} V${y + r} Q${x + 1},${y} ${x + 1 + r},${y} H${x + 1 + w - r} Q${x + 1 + w},${y} ${x + 1 + w},${y + r} V${H - B} Z` }, g)).textContent = titre;
+    }
+    if (k % 5 === 4 || k === 29) svg('text', { x: k === 29 ? x + l : x + l / 2, y: H - 6, 'text-anchor': k === 29 ? 'end' : 'middle' }, g).textContent = j.d.getDate() + '/' + (j.d.getMonth() + 1);
+  });
+  $('histoJours').replaceChildren(g);
+  if (!sessions.length) $('histoJours').append(el('p', 'Aucune lecture enregistrée pour l\'instant.', 'note'));
+
+  // Débit réel moyen par semaine (8 dernières semaines avec lecture)
+  const semaines = {};
+  for (const s of sessions) { const k = jourLocal(lundiDe(s.debut)); (semaines[k] = semaines[k] || { mots: 0, ms: 0 }); semaines[k].mots += s.mots; semaines[k].ms += s.actifMs; }
+  const lignesS = Object.entries(semaines).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 8);
+  $('tableSemaines').replaceChildren(tableau(['Semaine du', 'Mots', 'Temps actif', 'Débit réel'],
+    lignesS.map(([k, v]) => [new Date(k + 'T00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }), v.mots.toLocaleString('fr-FR'), formatDuree(v.ms), Math.round(v.mots / (v.ms / 60000)) + ' mots/min']), 'Aucune semaine de lecture.'));
+
+  // Temps total par livre
+  const livres = {};
+  for (const s of sessions) { (livres[s.livre] = livres[s.livre] || { mots: 0, ms: 0 }); livres[s.livre].mots += s.mots; livres[s.livre].ms += s.actifMs; }
+  $('tableLivres').replaceChildren(tableau(['Livre', 'Temps', 'Mots'],
+    Object.entries(livres).sort((a, b) => b[1].ms - a[1].ms).map(([k, v]) => [k, formatDuree(v.ms), v.mots.toLocaleString('fr-FR')]), 'Aucun livre lu.'));
+}
+function tableau(entetes, lignes, vide) {
+  if (!lignes.length) return el('p', vide, 'note');
+  const t = el('table'), tr = el('tr');
+  entetes.forEach((h, k) => tr.append(el('th', h, k ? 'n' : '')));
+  t.append(tr);
+  for (const l of lignes) { const r = el('tr'); l.forEach((c, k) => r.append(el('td', c, k ? 'n' : ''))); t.append(r); }
+  return t;
+}
+
+// ---------- Pause pour les yeux ----------
+function pauseYeux() {
+  const ecran = $('pauseYeuxEcran'), compte = $('pauseYeuxCompte'), fermer = $('pauseYeuxFermer');
+  $('pauseYeuxTexte').textContent = 'Pause pour les yeux : regardez au loin';
+  fermer.classList.add('cache'); ecran.classList.remove('cache');
+  let reste = PAUSE_YEUX_S;
+  compte.textContent = reste;
+  const t = setInterval(() => {
+    reste--;
+    compte.textContent = reste > 0 ? reste : 'Vous pouvez reprendre la lecture.';
+    if (reste <= 0) { clearInterval(t); fermer.classList.remove('cache'); fermer.focus(); }
+  }, 1000);
+}
+
+// ---------- Test de calibrage ----------
+// Chaque extrait est lu à une vitesse différente (débit réel), puis 6 questions à trous mesurent la mémoire immédiate du texte.
+const CAL = { donnees: null, ordre: null, k: 0, scores: {}, prefs: null };
+async function afficherCalibrage() {
+  montrerPage('calibrage');
+  const c = $('calibrageCorps'); c.replaceChildren();
+  c.append(
+    el('p', 'Vous allez lire 5 courts extraits (environ 200 mots), chacun à une vitesse différente : 250, 350, 450, 550 et 700 mots par minute en débit réel, dans un ordre mélangé. Après chaque extrait, 6 questions à trous vérifient ce que vous avez retenu.'),
+    el('p', 'Ce test mesure la mémoire immédiate du texte, pas la compréhension profonde : le résultat est indicatif. Il fonctionne sans connexion.', 'note'));
+  const go = el('button', 'Commencer le test', 'btn-principal'); go.onclick = demarrerCalibrage;
+  c.append(go);
+  const hist = lireLocal('lc:calibrages') || [];
+  if (hist.length) {
+    c.append(el('h2', 'Tests précédents'));
+    c.append(tableau(['Date', ...CAL_VITESSES.map(v => v + ''), 'Conseil'], hist.slice().reverse().map(h =>
+      [new Date(h.date).toLocaleDateString('fr-FR'), ...CAL_VITESSES.map(v => h.scores[v] + '/6'), h.conseil ? h.conseil + ' mots/min' : '< 250']), ''));
+  }
+}
+async function demarrerCalibrage() {
+  try { CAL.donnees = CAL.donnees || await chargerDonnees('calibrage.json'); }
+  catch (e) { alert('Données du test introuvables : ' + e.message); return; }
+  CAL.ordre = CAL_VITESSES.slice().sort(() => Math.random() - 0.5);
+  CAL.k = 0; CAL.scores = {};
+  annoncerExtrait();
+}
+function annoncerExtrait() {
+  montrerPage('calibrage');
+  const t = CAL.donnees.textes[CAL.k], c = $('calibrageCorps');
+  c.replaceChildren(el('h2', `Extrait ${CAL.k + 1} sur 5`), el('p', `${t.auteur}, ${t.titre}.`, 'note'),
+    el('p', 'Lisez attentivement : les questions viennent juste après. Vous pouvez mettre en pause avec Espace.'));
+  const go = el('button', 'Lire l\'extrait', 'btn-principal'); go.onclick = lireExtrait; c.append(go);
+}
+function lireExtrait() {
+  const t = CAL.donnees.textes[CAL.k], L = nouveauLivre();
+  L.titre = `Test de calibrage — extrait ${CAL.k + 1} / 5`;
+  for (const p of t.texte.split('\n')) ajouterPara(L, p);
+  preparer(L);
+  // Réglages du test (non enregistrés) : vitesse en débit réel, sans retour en arrière.
+  CAL.prefs = { vitesse: prefs.vitesse, debitReel: prefs.debitReel, reculReprise: prefs.reculReprise, pauseYeux: prefs.pauseYeux };
+  Object.assign(prefs, { vitesse: CAL.ordre[CAL.k], debitReel: true, reculReprise: 0, pauseYeux: false });
+  demarrerLecteur(L, { type: 'test', cle: 'test' }, 'test', null);
+  E.mode = 'mot';
+  E.surFin = () => { restaurerPrefsTest(); poserQuestions(); };
+  setTimeout(() => { if (E.L === L && !E.joue) jouer(); }, 800);
+}
+function restaurerPrefsTest() { if (CAL.prefs) { Object.assign(prefs, CAL.prefs); CAL.prefs = null; $('vitesse').value = prefs.vitesse; } }
+function abandonnerCalibrage() { restaurerPrefsTest(); $('lecteur').classList.remove('test'); afficherCalibrage(); }
+function poserQuestions() {
+  E.L = null; $('lecteur').classList.remove('test');
+  montrerPage('calibrage');
+  const c = $('calibrageCorps'), qs = CAL.donnees.questions[CAL.k];
+  c.replaceChildren(el('h2', `Extrait ${CAL.k + 1} sur 5 : questions`), el('p', 'Choisissez le mot qui était dans le texte.', 'note'));
+  const form = el('form');
+  qs.forEach((q, n) => {
+    const d = el('div', null, 'question');
+    d.append(el('p', (n + 1) + '. ' + q.phrase));
+    for (const choix of [q.reponse, ...q.leurres].sort(() => Math.random() - 0.5)) {
+      const lab = el('label'), r = el('input'); r.type = 'radio'; r.name = 'q' + n; r.value = choix; r.required = true;
+      lab.append(r, choix); d.append(lab);
+    }
+    form.append(d);
+  });
+  const ok = el('button', 'Valider', 'btn-principal'); ok.type = 'submit'; form.append(ok);
+  form.onsubmit = e => {
+    e.preventDefault();
+    CAL.scores[CAL.ordre[CAL.k]] = qs.filter((q, n) => (form.elements['q' + n].value || '') === q.reponse).length;
+    CAL.k++;
+    if (CAL.k < 5) annoncerExtrait(); else resultatsCalibrage();
+  };
+  c.append(form);
+}
+function resultatsCalibrage() {
+  const reussies = CAL_VITESSES.filter(v => CAL.scores[v] >= CAL_SEUIL);
+  const conseil = reussies.length ? Math.max(...reussies) : null;
+  const hist = lireLocal('lc:calibrages') || [];
+  hist.push({ date: new Date().toISOString(), scores: { ...CAL.scores }, conseil });
+  ecrireLocal('lc:calibrages', hist);
+  const c = $('calibrageCorps');
+  c.replaceChildren(el('h2', 'Résultat'));
+  // Courbe du score selon la vitesse
+  const W = 560, H = 220, G = 36, B = 28, T = 10, x = v => G + 20 + (v - 250) / 450 * (W - G - 40), y = s => H - B - s / 6 * (H - B - T);
+  const g = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'graphe', role: 'img', 'aria-label': 'Score selon la vitesse' });
+  for (const s of [0, 2, 4, 6]) { svg('line', { x1: G, x2: W, y1: y(s), y2: y(s), class: 'grille' }, g); svg('text', { x: G - 6, y: y(s) + 4, 'text-anchor': 'end' }, g).textContent = s; }
+  svg('line', { x1: G, x2: W, y1: y(CAL_SEUIL), y2: y(CAL_SEUIL), stroke: 'var(--doux)', 'stroke-dasharray': '4 4' }, g);
+  svg('text', { x: W - 2, y: y(CAL_SEUIL) - 5, 'text-anchor': 'end' }, g).textContent = 'seuil 5/6';
+  svg('polyline', { points: CAL_VITESSES.map(v => x(v) + ',' + y(CAL.scores[v])).join(' '), fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2 }, g);
+  for (const v of CAL_VITESSES) {
+    svg('title', {}, svg('circle', { cx: x(v), cy: y(CAL.scores[v]), r: 5, fill: 'var(--accent)', stroke: 'var(--fond)', 'stroke-width': 2 }, g)).textContent = `${v} mots/min : ${CAL.scores[v]}/6`;
+    svg('text', { x: x(v), y: H - 8, 'text-anchor': 'middle' }, g).textContent = v;
+  }
+  c.append(g, tableau(['Vitesse (débit réel)', 'Score'], CAL_VITESSES.map(v => [v + ' mots/min', CAL.scores[v] + ' / 6']), ''));
+  c.append(el('p', conseil ? `Vitesse conseillée : ${conseil} mots/min (la plus haute où vous gardez au moins 5 réponses sur 6).` : 'Votre score descend sous 5/6 dès 250 mots/min : restez en dessous de 250 mots/min pour le moment.'));
+  c.append(el('p', 'Rappel : ce test mesure la mémoire immédiate du texte, pas la compréhension profonde. Le résultat est indicatif.', 'note'));
+  if (conseil) {
+    const b = el('button', `Utiliser ${conseil} mots/min en débit réel`, 'btn-principal');
+    b.onclick = () => { prefs.debitReel = true; $('debitReel').checked = true; changerVitesse(conseil); afficherToast('Vitesse réglée sur ' + conseil + ' mots/min (débit réel).'); };
+    c.append(b);
+  }
+  const autre = el('button', 'Retour au test'); autre.style.marginLeft = '8px'; autre.onclick = afficherCalibrage; c.append(autre);
+}
+
+// ---------- Synchronisation OneDrive (téléphone) ----------
+// Le téléphone lit et écrit le même dossier Bibliotheque que l'ordinateur, dans OneDrive (Microsoft Graph).
+// Connexion « PKCE » : Kdence ne voit jamais le mot de passe, seulement une autorisation limitée aux fichiers.
+const OD_AUTORITE = 'https://login.microsoftonline.com/consumers/oauth2/v2.0';
+const OD_GRAPH = 'https://graph.microsoft.com/v1.0';
+const OD_PORTEE = 'Files.ReadWrite offline_access';
+const OD_FICHIER = '.progression-lecture.json';
+const OD_DOSSIER_DEFAUT = 'Bureau/Environnement Claude/Lecture-Cadencee/Bibliotheque';
+const OD_ENVOI_DIRECT_MAX = 4e6;            // au-delà, envoi en plusieurs morceaux
+const OD_BLOC = 10 * 320 * 1024;            // taille d'un morceau (multiple de 320 Kio, exigé par OneDrive)
+const OD_INTERVALLE_MS = 30000;             // en lecture, la position part au plus toutes les 30 s (et à chaque pause)
+const OD_RECONNEXION_MIN_MS = 10 * 60000;   // reconnexion silencieuse au plus une fois toutes les 10 min
+
+const od = {
+  jeton: lireLocal('lc:od:jeton'),                    // { acces, expire, rafraichir }
+  dossierId: lireLocal('lc:od:dossierId'),
+  progression: lireLocal('lc:od:progression') || {},  // copie locale du fichier de progression commun
+  liste: lireLocal('lc:od:liste') || [],              // livres du dossier OneDrive (dernière liste connue)
+  aEnvoyer: !!lireLocal('lc:od:aEnvoyer'),
+  minuteur: null, enCours: null, recherche: null, relance: false, version: 0,
+  client() { return (prefs.odClient || window.KDENCE_ONEDRIVE_CLIENT || '').trim(); },
+  dossier() { return (prefs.odDossier || OD_DOSSIER_DEFAUT).trim().replace(/^\/+|\/+$/g, ''); },
+  connecte() { return !!lireLocal('lc:od:relie'); },
+  disponible() { return !modeBiblio && /^https?:$/.test(location.protocol); },
+};
+function erreurReconnexion(message) { const e = new Error(message || 'reconnexion à OneDrive nécessaire'); e.reconnexion = true; return e; }
+function b64url(octets) { return btoa(String.fromCharCode(...new Uint8Array(octets))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function adresseRetour() { return location.origin + location.pathname.replace(/index\.html$/, ''); }
+
+async function odUrlConnexion(silencieux) {
+  const verif = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const defi = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verif)));
+  const etat = b64url(crypto.getRandomValues(new Uint8Array(16)));
+  ecrireLocal('lc:od:pkce', { verif, etat, silencieux, t: Date.now() });
+  const q = new URLSearchParams({ client_id: od.client(), response_type: 'code', redirect_uri: adresseRetour(), scope: OD_PORTEE,
+    code_challenge: defi, code_challenge_method: 'S256', state: etat, response_mode: 'query' });
+  if (silencieux) q.set('prompt', 'none');
+  return OD_AUTORITE + '/authorize?' + q;
+}
+async function odConnecter(silencieux = false) {
+  if (!od.client()) { afficherToast('Il manque l\'identifiant d\'application Microsoft (Réglages → Synchronisation OneDrive → Réglages avancés).', 7000); return; }
+  if (silencieux) ecrireLocal('lc:od:essaiSilencieux', Date.now());
+  location.assign(await odUrlConnexion(silencieux));
+}
+// Retour de la page de connexion Microsoft (?code=… ou ?error=…).
+async function odRetour() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('code') && !q.has('error')) return;
+  const p = lireLocal('lc:od:pkce');
+  localStorage.removeItem('lc:od:pkce');
+  history.replaceState(null, '', location.pathname);
+  if (!p || q.get('state') !== p.etat) return;
+  if (q.has('error')) {
+    if (!p.silencieux) afficherToast('Connexion OneDrive annulée : ' + (q.get('error_description') || q.get('error')).split(/\r?\n/)[0], 7000);
+    return;
+  }
+  try {
+    await odDemanderJeton({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: adresseRetour(), code_verifier: p.verif });
+    ecrireLocal('lc:od:relie', true);
+    if (!p.silencieux) afficherToast('OneDrive connecté : la bibliothèque est partagée avec l\'ordinateur.', 5000);
+  } catch (e) { afficherToast('Connexion OneDrive impossible : ' + e.message, 7000); }
+}
+async function odDemanderJeton(params) {
+  const r = await fetch(OD_AUTORITE + '/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: od.client(), scope: OD_PORTEE, ...params }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error((j.error_description || j.error || 'refus ' + r.status).split(/\r?\n/)[0]); e.code = j.error; throw e; }
+  od.jeton = { acces: j.access_token, expire: Date.now() + ((j.expires_in || 3600) - 60) * 1000, rafraichir: j.refresh_token || (od.jeton && od.jeton.rafraichir) };
+  ecrireLocal('lc:od:jeton', od.jeton);
+  return od.jeton.acces;
+}
+// Jeton d'accès valide ; renouvelé si besoin. Microsoft limite le renouvellement des applications web à 24 h :
+// au-delà, une reconnexion (silencieuse le plus souvent) est nécessaire.
+async function odJeton() {
+  if (od.jeton && od.jeton.acces && od.jeton.expire > Date.now()) return od.jeton.acces;
+  if (!od.jeton || !od.jeton.rafraichir) throw erreurReconnexion();
+  try { return await odDemanderJeton({ grant_type: 'refresh_token', refresh_token: od.jeton.rafraichir }); }
+  catch (e) {
+    if (e.code === 'invalid_grant' || e.code === 'interaction_required') { od.jeton = null; localStorage.removeItem('lc:od:jeton'); throw erreurReconnexion(); }
+    throw e;
+  }
+}
+async function odGraph(chemin, options = {}, deuxieme = false) {
+  const r = await fetch(chemin.startsWith('http') ? chemin : OD_GRAPH + chemin,
+    { ...options, headers: { ...(options.headers || {}), Authorization: 'Bearer ' + await odJeton() } });
+  if (r.status === 401 && !deuxieme && od.jeton) { od.jeton.expire = 0; return odGraph(chemin, options, true); }
+  return r;
+}
+const odChemin = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+
+function odTrouverDossier() {
+  if (od.dossierId) return Promise.resolve(od.dossierId);
+  if (!od.recherche) od.recherche = odChercherDossier().finally(() => { od.recherche = null; });   // une seule recherche à la fois
+  return od.recherche;
+}
+async function odChercherDossier() {
+  const r = await odGraph('/me/drive/root:/' + odChemin(od.dossier()));
+  if (r.ok) od.dossierId = (await r.json()).id;
+  else if (r.status === 404) {          // dossier déplacé ou renommé : on cherche le fichier de progression
+    const s = await odGraph(`/me/drive/root/search(q='progression-lecture')`);
+    const j = s.ok ? await s.json() : { value: [] };
+    const f = (j.value || []).find(x => x.name === OD_FICHIER && x.parentReference && x.parentReference.id);
+    if (!f) throw new Error('dossier « ' + od.dossier() + ' » introuvable dans OneDrive');
+    od.dossierId = f.parentReference.id;
+  } else throw new Error('OneDrive a répondu « ' + r.status + ' »');
+  ecrireLocal('lc:od:dossierId', od.dossierId);
+  return od.dossierId;
+}
+async function odListerLivres() {
+  const racine = await odTrouverDossier(), out = [];
+  async function parcourir(id, prefixe, profondeur) {
+    for (let url = `/me/drive/items/${id}/children?$top=200`; url;) {
+      const r = await odGraph(url);
+      if (!r.ok) throw new Error('liste des livres refusée (' + r.status + ')');
+      const j = await r.json();
+      for (const x of j.value) {
+        if (x.name.startsWith('.')) continue;
+        if (x.folder && profondeur < 3) await parcourir(x.id, prefixe + x.name + '/', profondeur + 1);
+        else if (x.file && FORMATS_ACCEPTES.test(x.name)) out.push({ nom: prefixe + x.name, id: x.id, taille: x.size, etag: x.eTag, url: x['@microsoft.graph.downloadUrl'] });
+      }
+      url = j['@odata.nextLink'] || null;
+    }
+  }
+  await parcourir(racine, '', 0);
+  od.liste = out.map(({ url, ...x }) => x);       // l'adresse de téléchargement expire : on ne la garde pas
+  ecrireLocal('lc:od:liste', od.liste);
+  return out;
+}
+// Fusion livre par livre : la position la plus récente gagne (champ « maj »).
+function odFusionner(a, b) {
+  const r = { ...(a || {}) };
+  for (const [k, v] of Object.entries(b || {})) if (v && (!r[k] || (v.maj || '') > (r[k].maj || ''))) r[k] = v;
+  return r;
+}
+async function odLireProgression() {
+  const id = await odTrouverDossier();
+  const r = await odGraph(`/me/drive/items/${id}:/${encodeURIComponent(OD_FICHIER)}`);
+  if (r.status === 404) return { donnees: {}, etag: null };
+  if (!r.ok) throw new Error('lecture des positions refusée (' + r.status + ')');
+  const meta = await r.json();
+  const c = await fetch(meta['@microsoft.graph.downloadUrl']);
+  return { donnees: c.ok ? await c.json().catch(() => ({})) : {}, etag: meta.eTag };
+}
+// Récupère les positions de l'ordinateur et, s'il y a du nouveau ici, les envoie.
+// « If-Match » : si le fichier a changé entre-temps (ordinateur), on relit et on refusionne.
+async function odSynchroniserProgression() {
+  for (let essai = 0; essai < 4; essai++) {
+    const version = od.version;      // une position notée pendant l'envoi devra repartir
+    const { donnees, etag } = await odLireProgression();
+    od.progression = odFusionner(donnees, od.progression);
+    ecrireLocal('lc:od:progression', od.progression);
+    if (!od.aEnvoyer) return;
+    const r = await odGraph(`/me/drive/items/${od.dossierId}:/${encodeURIComponent(OD_FICHIER)}:/content`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', ...(etag ? { 'If-Match': etag } : {}) }, body: JSON.stringify(od.progression, null, 2) });
+    if (r.status === 412) continue;
+    if (!r.ok) throw new Error('envoi des positions refusé (' + r.status + ')');
+    if (od.version === version) { od.aEnvoyer = false; ecrireLocal('lc:od:aEnvoyer', false); }
+    return;
+  }
+  throw new Error('fichier des positions trop souvent modifié, nouvel essai plus tard');
+}
+function odNoterProgression(cle, p, urgent) {
+  od.progression[cle] = p;
+  ecrireLocal('lc:od:progression', od.progression);
+  od.version++;
+  od.aEnvoyer = true; ecrireLocal('lc:od:aEnvoyer', true);
+  if (urgent || !E.joue) { clearTimeout(od.minuteur); od.minuteur = null; odEnvoyerSiBesoin(); }
+  else if (!od.minuteur) od.minuteur = setTimeout(() => { od.minuteur = null; odEnvoyerSiBesoin(); }, OD_INTERVALLE_MS);
+}
+function odEnvoyerSiBesoin() {
+  if (!od.connecte() || !od.aEnvoyer || navigator.onLine === false) return od.enCours || Promise.resolve();
+  if (od.enCours) { od.relance = true; return od.enCours; }      // un envoi tourne déjà : il repartira avec la nouveauté
+  od.enCours = (async () => {
+    do { od.relance = false; await odSynchroniserProgression(); } while (od.relance && od.aEnvoyer);
+  })().catch(e => console.warn('Synchronisation OneDrive :', e.message)).finally(() => { od.enCours = null; });
+  return od.enCours;
+}
+// Ajoute un livre (ou un texte importé) à la bibliothèque OneDrive. Même nom et même taille : déjà présent.
+async function odEnvoyerLivre(nom, buf) {
+  const id = await odTrouverDossier();
+  nom = nom.split('/').pop();
+  const deja = od.liste.find(x => x.nom === nom && x.taille === buf.byteLength);
+  if (deja) return deja.nom;
+  let item;
+  if (buf.byteLength <= OD_ENVOI_DIRECT_MAX) {
+    const r = await odGraph(`/me/drive/items/${id}:/${encodeURIComponent(nom)}:/content?@microsoft.graph.conflictBehavior=rename`, { method: 'PUT', body: buf });
+    if (!r.ok) throw new Error('envoi du livre refusé (' + r.status + ')');
+    item = await r.json();
+  } else {
+    const s = await odGraph(`/me/drive/items/${id}:/${encodeURIComponent(nom)}:/createUploadSession`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'rename' } }) });
+    if (!s.ok) throw new Error('envoi du livre refusé (' + s.status + ')');
+    const { uploadUrl } = await s.json();
+    for (let d = 0; d < buf.byteLength; d += OD_BLOC) {
+      const f = Math.min(buf.byteLength, d + OD_BLOC);
+      const r = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Range': `bytes ${d}-${f - 1}/${buf.byteLength}` }, body: buf.slice(d, f) });
+      if (!r.ok) throw new Error('envoi du livre interrompu (' + r.status + ')');
+      if (r.status === 200 || r.status === 201) item = await r.json();
+    }
+  }
+  od.liste.push({ nom: item.name, id: item.id, taille: item.size, etag: item.eTag });
+  ecrireLocal('lc:od:liste', od.liste);
+  return item.name;
+}
+async function odOuvrirLivre(x) {
+  $('message').textContent = '';
+  let rec = null;
+  try { rec = await idb.lire('od:' + x.nom); } catch {}
+  if (!rec || (x.etag && rec.etag && rec.etag !== x.etag) || (x.etag && !rec.etag && x.url)) {
+    try {
+      $('chargement').textContent = 'Téléchargement du livre…'; $('chargement').classList.remove('cache');
+      const r = x.url ? await fetch(x.url) : await odGraph(`/me/drive/items/${x.id}/content`);
+      if (!r.ok) throw new Error('OneDrive a répondu « ' + r.status + ' »');
+      rec = { nom: x.nom, buf: await r.arrayBuffer(), etag: x.etag };
+      try { await idb.ecrire('od:' + x.nom, rec); } catch {}
+    } catch (e) {
+      if (!rec) { $('chargement').classList.add('cache'); $('message').textContent = 'Livre indisponible sans connexion (il n\'a pas encore été téléchargé sur ce téléphone).'; return; }
+    }
+  }
+  // Dernière position connue de l'ordinateur, sans attendre plus de 4 s.
+  if (navigator.onLine !== false) await Promise.race([odSynchroniserProgression().catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
+  return ouvrirLivre(x.nom, rec.buf, { type: 'onedrive', cle: x.nom });
+}
+function dessinerListeOneDrive(liste) {
+  const ul = $('listeOneDrive'); ul.innerHTML = '';
+  const p = od.progression;
+  liste.slice().sort((a, b) => ((p[b.nom] || {}).maj || '').localeCompare((p[a.nom] || {}).maj || '') || a.nom.localeCompare(b.nom))
+    .forEach(x => ul.appendChild(ligneLivre(x.nom, p[x.nom], formatTaille(x.taille || 0), () => odOuvrirLivre(x))));
+}
+async function afficherOneDrive() {
+  majReglagesOneDrive();
+  const carte = $('carteOneDrive');
+  if (!od.disponible() || !od.connecte()) { carte.classList.add('cache'); return; }
+  carte.classList.remove('cache');
+  dessinerListeOneDrive(od.liste);
+  if (navigator.onLine === false) { $('odEtat').textContent = 'Hors connexion : livres déjà téléchargés et dernières positions connues.'; return; }
+  $('odEtat').textContent = 'Synchronisation avec OneDrive…';
+  try {
+    const [liste] = await Promise.all([odListerLivres(), odSynchroniserProgression()]);
+    dessinerListeOneDrive(liste);
+    $('odEtat').textContent = liste.length ? 'À jour avec l\'ordinateur (' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ').'
+      : 'Le dossier OneDrive ne contient pas encore de livre.';
+  } catch (e) {
+    $('odEtat').textContent = e.reconnexion ? 'Reconnexion à OneDrive nécessaire (Réglages → Connecter OneDrive).' : 'Synchronisation impossible : ' + e.message + '.';
+    // Session Microsoft expirée (24 h) : reconnexion automatique et silencieuse, si on n'en a pas tenté une récemment.
+    if (e.reconnexion && Date.now() - (lireLocal('lc:od:essaiSilencieux') || 0) > OD_RECONNEXION_MIN_MS && !$('accueil').classList.contains('cache')) odConnecter(true);
+  }
+}
+function majReglagesOneDrive() {
+  $('reglageOneDrive').classList.toggle('cache', !od.disponible());
+  const lie = od.connecte();
+  $('odReglageEtat').textContent = !od.client() ? 'Pas encore configuré : il faut l\'identifiant d\'application Microsoft (voir DEPLOIEMENT.md).'
+    : lie ? 'Connecté. Dossier : « ' + od.dossier() + ' ».' : 'Non connecté.';
+  $('odConnecter').textContent = lie ? 'Reconnecter OneDrive' : 'Connecter OneDrive';
+  $('odSynchro').classList.toggle('cache', !lie);
+  $('odDeconnecter').classList.toggle('cache', !lie);
+}
+async function odDeconnecter() {
+  if (!confirm('Déconnecter OneDrive ? Les livres téléchargés sur ce téléphone seront effacés ; ceux de OneDrive ne sont pas touchés.')) return;
+  for (const x of od.liste) try { await idb.supprimer('od:' + x.nom); } catch {}
+  for (const k of Object.keys(localStorage)) if (k.startsWith('lc:od:')) localStorage.removeItem(k);
+  Object.assign(od, { jeton: null, dossierId: null, progression: {}, liste: [], aEnvoyer: false });
+  afficherAccueil();
+}
+
+// ---------- Événements ----------
+function changerVitesse(v) {
+  prefs.vitesse = Math.max(20, Math.min(2000, Math.round(v) || 300));
+  $('vitesse').value = prefs.vitesse;
+  $('vitesseDefaut').value = prefs.vitesse;
+  sauverPrefs();
+  if (E.L) majEntete();
+}
+$('vitesse').onchange = e => changerVitesse(+e.target.value);
+$('vitesse').onkeydown = e => { if (e.key === 'Enter') { changerVitesse(+e.target.value); e.target.blur(); } };
+$('moins').onclick = () => changerVitesse(prefs.vitesse - 10);
+$('plus').onclick = () => changerVitesse(prefs.vitesse + 10);
+$('pivot').onchange = e => { prefs.pivot = e.target.checked; $('pivotDefaut').checked = prefs.pivot; sauverPrefs(); if (E.joue) afficherMot(); e.target.blur(); };
+$('jouer').onclick = e => { basculer(); e.currentTarget.blur(); };
+$('mot').onclick = () => pause();
+$('modeLecture').onchange = e => { changerMode(e.target.value); e.target.blur(); };
+$('btnDico').onclick = e => { e.currentTarget.blur(); chercherDefinition(E.i); };
+$('btnVocab').onclick = e => { e.currentTarget.blur(); afficherVocabulaire(); };
+$('btnRecherche').onclick = e => { e.currentTarget.blur(); ouvrirRecherche(); };
+$('btnMarque').onclick = e => { e.currentTarget.blur(); ajouterMarque(); };
+$('btnMarques').onclick = e => { e.currentTarget.blur(); afficherMarques(); };
+$('pauseYeuxFermer').onclick = () => $('pauseYeuxEcran').classList.add('cache');
+$('ouvrirStats').onclick = afficherStats;
+$('ouvrirCalibrage').onclick = afficherCalibrage;
+document.querySelectorAll('.retourAccueil').forEach(b => b.onclick = () => { restaurerPrefsTest(); afficherAccueil(); });
+$('objectif').onchange = e => { prefs.objectif = Math.max(0, Math.round(+e.target.value) || 0); e.target.value = prefs.objectif; sauverPrefs(); afficherStats(); };
+$('panneauFermer').onclick = fermerPanneau;
+$('voile').onclick = fermerPanneau;
+// Appui long (500 ms) sur un mot du texte : définition directe.
+(() => {
+  const page = $('pageTexte');
+  let minuteur = null, depart = null;
+  page.addEventListener('pointerdown', e => {
+    const s = e.target.closest('span[data-i]');
+    if (!s) return;
+    depart = { x: e.clientX, y: e.clientY };
+    clearTimeout(minuteur);
+    minuteur = setTimeout(() => {
+      minuteur = null;
+      page.querySelectorAll('.ici').forEach(x => x.classList.remove('ici'));
+      s.classList.add('ici');
+      E.i = +s.dataset.i; E.positionChoisie = true; majEntete();
+      chercherDefinition(E.i);
+    }, APPUI_LONG_MS);
+  });
+  page.addEventListener('pointermove', e => { if (depart && Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 10) clearTimeout(minuteur); });
+  for (const t of ['pointerup', 'pointercancel', 'pointerleave']) page.addEventListener(t, () => { clearTimeout(minuteur); depart = null; });
+  page.addEventListener('contextmenu', e => e.preventDefault());
+})();
+$('phrasePrec').onclick = phrasePrec;
+$('phraseSuiv').onclick = phraseSuiv;
+$('retour').onclick = () => {
+  pause(); libererEcran(); terminerSession();
+  const test = E.source && E.source.type === 'test';
+  E.L = null;
+  if (test) abandonnerCalibrage(); else afficherAccueil();
+};
+$('pageTexte').onclick = e => {
+  const s = e.target.closest('span[data-i]');
+  if (!s) return;
+  if (E.joue) return allerA(+s.dataset.i);
+  E.i = +s.dataset.i;
+  E.positionChoisie = true;
+  $('pageTexte').querySelectorAll('.ici').forEach(x => x.classList.remove('ici'));
+  s.classList.add('ici');
+  majEntete(); sauvegarder();
+};
+
+// Gestes tactiles : balayages horizontaux = phrase, vertical (en lecture) = vitesse, double appui = rejouer la phrase.
+// En pause, le balayage vertical garde le défilement normal du texte.
+(() => {
+  const scene = $('scene');
+  let t0 = null, dernierAppui = 0, minuteurAppui = null;
+  scene.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { t0 = null; return; }
+    const t = e.touches[0];
+    t0 = { x: t.clientX, y: t.clientY, axe: null, crans: 0, dx: 0 };
+  }, { passive: true });
+  scene.addEventListener('touchmove', e => {
+    if (!t0) return;
+    const t = e.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    t0.dx = dx;
+    if (!t0.axe && Math.hypot(dx, dy) > 12) t0.axe = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    if (t0.axe === 'h' || (t0.axe === 'v' && E.joue)) e.preventDefault();
+    if (t0.axe === 'v' && E.joue) {
+      const crans = Math.trunc(-dy / GESTE_CRAN_PX);
+      if (crans !== t0.crans) {
+        changerVitesse(prefs.vitesse + GESTE_CRAN_VITESSE * (crans - t0.crans));
+        t0.crans = crans;
+        afficherToast(prefs.vitesse + ' mots/min', 900);
+      }
+    }
+  }, { passive: false });
+  scene.addEventListener('touchend', e => {
+    if (!t0) return;
+    const g = t0; t0 = null;
+    if (g.axe === 'h') { if (Math.abs(g.dx) >= GESTE_BALAYAGE_PX) (g.dx > 0 ? phrasePrec : phraseSuiv)(); return; }
+    if (g.axe) return;
+    const maintenant = Date.now(), double = maintenant - dernierAppui < DOUBLE_APPUI_MS;
+    dernierAppui = double ? 0 : maintenant;
+    if (E.joue || e.target.closest('#mot')) {
+      // En lecture : on attend de savoir si c'est un double appui avant de mettre en pause.
+      e.preventDefault();
+      clearTimeout(minuteurAppui);
+      if (double) rejouerPhrase();
+      else minuteurAppui = setTimeout(() => { if (E.joue) pause(); }, DOUBLE_APPUI_MS);
+    } else if (double) { e.preventDefault(); rejouerPhrase(); }
+  });
+})();
+
+document.addEventListener('keydown', e => {
+  if (!E.L || $('lecteur').classList.contains('cache')) return;
+  if (panneauOuvert()) { if (e.key === 'Escape') { e.preventDefault(); fermerPanneau(); } return; }
+  if (e.target.tagName === 'INPUT' && (e.target.type === 'text' || e.target.type === 'search')) return;
+  if (e.target.tagName === 'INPUT' && e.target.type === 'number' && e.key !== ' ' && e.key !== 'Escape') return;
+  const pas = e.shiftKey ? 40 : 10;
+  const actions = {
+    ' ': basculer, Escape: () => E.joue && pause(),
+    ArrowUp: () => changerVitesse(prefs.vitesse + pas), ArrowDown: () => changerVitesse(prefs.vitesse - pas),
+    ArrowLeft: phrasePrec, ArrowRight: phraseSuiv, PageUp: chapitrePrec, PageDown: chapitreSuiv,
+    m: () => changerMode(E.mode === 'guide' ? 'mot' : 'guide'),
+  };
+  actions.M = actions.m;
+  actions.d = actions.D = () => chercherDefinition(E.i);
+  actions.f = actions.F = ouvrirRecherche;
+  actions.b = actions.B = ajouterMarque;
+  if (E.source.type === 'test') for (const k of 'dDfFbBmM') delete actions[k];
+  if (actions[e.key]) { e.preventDefault(); if (e.target.blur) e.target.blur(); actions[e.key](); }
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && E.L) { if (E.joue) pause(false); sauvegarder(true); terminerSession(); }
+  if (document.hidden) odEnvoyerSiBesoin();
+  else if (!$('accueil').classList.contains('cache') && od.connecte()) afficherOneDrive();   // retour dans l'appli : positions de l'ordinateur à jour
+});
+window.addEventListener('pagehide', () => { if (E.L) { sauvegarder(true); terminerSession(); } });
+
+// Accueil
+// Bouton « Importer » : fichier, texte collé ou page web.
+function ouvrirImport() {
+  const choix = (titre, detail, action) => { const b = el('button', null, 'choix-import'); b.append(el('b', titre), el('small', detail)); b.onclick = action; return b; };
+  const f = document.createDocumentFragment();
+  f.append(
+    choix('Ouvrir un fichier', 'EPUB, PDF, Word .docx, TXT, HTML', () => { fermerPanneau(); $('fichier').click(); }),
+    choix('Coller un texte', 'Un courriel, une note, un message…', () => ouvrirCollage()),
+    choix('Lire une page web', modeBiblio ? 'Un article, à partir de son adresse' : 'Wikipédia, Wikisource… (ailleurs : Partager → Kdence)', () => ouvrirPageWeb()));
+  ouvrirPanneau('Importer', f);
+}
+$('btnImporter').onclick = ouvrirImport;
+// Android attribue mal le type des EPUB : avec un filtre, ils apparaissent grisés. Le format est vérifié après le choix.
+if (/Android/i.test(navigator.userAgent)) $('fichier').removeAttribute('accept');
+$('odConnecter').onclick = () => odConnecter(false);
+$('odDeconnecter').onclick = odDeconnecter;
+$('odSynchro').onclick = () => { od.aEnvoyer = true; afficherOneDrive(); };
+window.addEventListener('online', () => { odEnvoyerSiBesoin(); if (!$('accueil').classList.contains('cache')) afficherOneDrive(); });
+$('fichier').onchange = e => { if (e.target.files[0]) ouvrirFichier(e.target.files[0]); e.target.value = ''; };
+// Un fichier glissé sur la fenêtre (ordinateur) est importé aussi.
+['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('accueil').classList.add('survol'); }));
+['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('accueil').classList.remove('survol'); }));
+document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f && !$('accueil').classList.contains('cache')) ouvrirFichier(f); });
+$('vitesseDefaut').onchange = e => changerVitesse(+e.target.value);
+$('pivotDefaut').onchange = e => { prefs.pivot = e.target.checked; sauverPrefs(); };
+$('theme').onclick = () => { prefs.theme = { auto: 'light', light: 'dark', dark: 'auto' }[prefs.theme]; sauverPrefs(); appliquerTheme(); };
+$('enregistrerDossier').onclick = async () => {
+  try {
+    const r = await (await api('api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dossier: $('dossier').value }) })).json();
+    $('dossier').value = r.dossier;
+    afficherAccueil();
+  } catch (e) { alert('Dossier refusé : ' + e.message); }
+};
+
+(async () => {
+  $('vitesseDefaut').value = prefs.vitesse;
+  $('pivotDefaut').checked = prefs.pivot;
+  lierReglage('tailleMot', v => v + ' %', appliquerTailles);
+  lierReglage('tailleTexte', v => v.toFixed(2).replace('.', ',') + ' rem', appliquerTailles);
+  const ms = v => v + ' ms', mots = v => v ? v + ' mot' + (v > 1 ? 's' : '') : 'désactivé';
+  const rafraichir = () => { if (E.L) majEntete(); };
+  lierReglage('pauseFinPhrase', ms, rafraichir);
+  lierReglage('pauseParagraphe', ms, rafraichir);
+  lierReglage('rythmeFrequence', null, () => { if (E.L) { preparerRythme(E.L); majEntete(); } });
+  lierReglage('debitReel', null, rafraichir);
+  lierReglage('reperes', null, () => { if (E.joue) afficherMot(); });
+  lierReglage('phraseEnCours', null, () => { if (E.joue) afficherMot(); });
+  lierReglage('motsVoisins', null, () => { if (E.joue) afficherMot(); });
+  lierReglage('motsParGroupe', v => v + (v > 1 ? ' mots' : ' mot'), () => { if (E.joue) afficherMot(); });
+  lierReglage('groupeCoupe', null, () => { if (E.joue) afficherMot(); });
+  $('odDossier').placeholder = OD_DOSSIER_DEFAUT;
+  if (window.KDENCE_ONEDRIVE_CLIENT) $('odClient').placeholder = window.KDENCE_ONEDRIVE_CLIENT + ' (configuré)';
+  lierReglage('odDossier', null, () => { od.dossierId = null; localStorage.removeItem('lc:od:dossierId'); majReglagesOneDrive(); });
+  lierReglage('odClient', null, majReglagesOneDrive);
+  lierReglage('pauseYeux');
+  lierReglage('pauseYeuxMin', v => v + ' min');
+  $('objectif').value = prefs.objectif;
+  recupererSession();
+  lierReglage('demarrage', mots);
+  lierReglage('reculReprise', mots);
+  appliquerTailles();
+  appliquerTheme();
+  if (window.PWA && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker', e));
+  await detecterMode();
+  if (od.disponible()) await odRetour();       // retour de la page de connexion Microsoft
+  await afficherAccueil();
+  // Arrivée par « Partager » → Kdence (Android) : paramètres titre / texte / adresse.
+  const q = new URLSearchParams(location.search);
+  if (q.has('texte') || q.has('adresse') || q.has('titre')) {
+    history.replaceState(null, '', location.pathname);
+    traiterPartage(q.get('titre'), q.get('texte'), q.get('adresse'));
+  }
+})();
+</script>
+</body>
+</html>
