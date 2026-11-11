@@ -155,6 +155,11 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 @media (max-width: 760px) { #texte { padding-right: 64px; } }
 
 .outil { padding: .4em .55em; }
+#chapitre, #pages { cursor: pointer; }
+#chapitre::after { content: " ▾"; font-size: .7em; color: var(--doux); }
+#lecteur.test #chapitre::after { content: ""; }
+.aller-page { margin-bottom: 6px; } .aller-page input { width: 90px; font-size: 1rem; padding: .4em .5em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); text-align: center; }
+.sommaire li.actuel span { font-weight: 600; color: var(--accent); }
 #lecteur.test .vitesse, #lecteur.test #modeLecture, #lecteur.test .outil, #lecteur.test #btnDico, #lecteur.test label, #lecteur.test #phrasePrec, #lecteur.test #phraseSuiv, #lecteur.test .aide { display: none !important; }
 .page input[type=number], #accueil input[type=number] { padding: .35em .5em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
 .page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
@@ -390,6 +395,7 @@ body { overscroll-behavior-y: none; }
 // ---------- Constantes ajustables ----------
 const MOTS_PAR_PAGE = 250;
 const FORMATS_ACCEPTES = /\.(epub|pdf|docx|txt|md|html?)$/i;
+const TITRE_PDF_RAPPORT = 1.3;   // PDF sans signets : un titre est au moins 1,3 fois plus grand que le texte courant
 const MOTS_MIN_IMPORT = 20;      // en dessous, un texte collé ou une page ne sont pas considérés comme lisibles
 const GESTE_BALAYAGE_PX = 50;      // distance minimale d'un balayage horizontal
 const GESTE_CRAN_PX = 40;          // un cran de vitesse tous les 40 px de balayage vertical
@@ -1041,16 +1047,57 @@ async function lirePdf(buf) {
   try { await parcourir(await pdf.getOutline(), 0); } catch {}
 
   L.pagesDebut = [];
+  const candidats = [], tailles = new Map();      // titres possibles ; taille de caractères → nombre de caractères
   for (let p = 1; p <= pdf.numPages; p++) {
     if (p % 10 === 0) $('chargement').textContent = `Analyse du livre… page ${p} / ${pdf.numPages}`;
     L.pagesDebut.push(L.mots.length);
     for (const c of chapPages[p - 1] || []) ajouterChapitre(L, c.titre, c.niveau);
     const page = await pdf.getPage(p);
     const tc = await page.getTextContent();
-    for (const para of paragraphesPdf(tc.items)) ajouterPara(L, para, p);
+    for (const para of paragraphesPdf(tc.items)) {
+      const debut = L.mots.length;
+      ajouterPara(L, para.texte, p);
+      const t = Math.round(para.h * 2) / 2;
+      tailles.set(t, (tailles.get(t) || 0) + para.texte.length);
+      if (para.lignes <= 2 && para.texte.length <= 90) candidats.push({ ...para, h: t, debut, fin: L.mots.length, page: p });
+    }
     page.cleanup();
   }
+  // Pas de signets : on reconnaît les titres de chapitre dans le texte lui-même.
+  if (!L.chapitres.length) for (const c of detecterTitresPdf(candidats, tailles, pdf.numPages)) L.chapitres.push(c);
   return L;
+}
+
+// Titres de chapitre d'un PDF sans signets : ligne courte, isolée, en caractères nettement plus grands que le texte courant,
+// ou commençant par « Chapitre », « Partie », « Prologue »… (ou un chiffre romain seul).
+const MOTIF_TITRE = /^(chapitre|chapter|partie|part|livre|book|tome|prologue|[ée]pilogue|introduction|conclusion|avant-propos|pr[ée]face|postface|annexe)\b/i;
+const MOTIF_ROMAIN = /^[IVXLC]{1,7}\.?$/;
+function detecterTitresPdf(candidats, tailles, nbPages) {
+  let corps = 0, max = 0;
+  for (const [t, n] of tailles) if (n > max) { max = n; corps = t; }        // taille du texte courant
+  // Un texte répété sur beaucoup de pages (titre courant en haut de page) n'est pas un chapitre.
+  const repetitions = new Map();
+  for (const c of candidats) repetitions.set(c.texte, (repetitions.get(c.texte) || 0) + 1);
+  let retenus = candidats.filter(c => repetitions.get(c.texte) <= 2 && !/[,;]$/.test(c.texte)
+    && (c.h >= corps * TITRE_PDF_RAPPORT || MOTIF_TITRE.test(c.texte) || MOTIF_ROMAIN.test(c.texte)));
+  // Trop de « titres » : la mise en page est trompeuse, on ne garde que les formulations explicites.
+  if (retenus.length > Math.max(40, nbPages)) retenus = retenus.filter(c => MOTIF_TITRE.test(c.texte) || MOTIF_ROMAIN.test(c.texte));
+  // Deux lignes de titre qui se suivent (« Chapitre 3 » puis « Le retour ») ne font qu'un chapitre.
+  const fusion = [];
+  for (const c of retenus) {
+    const prec = fusion[fusion.length - 1];
+    if (prec && prec.fin === c.debut && prec.page === c.page) { prec.texte += ' — ' + c.texte; prec.morceaux = null; prec.fin = c.fin; prec.h = Math.max(prec.h, c.h); }
+    else fusion.push({ ...c });
+  }
+  // Niveaux : les plus grands caractères (ou « Partie », « Livre », « Tome ») au-dessus des autres.
+  const grands = [...new Set(fusion.map(c => c.h))].sort((a, b) => b - a);
+  const plusieursTailles = grands.length > 1 && grands[0] >= grands[grands.length - 1] * 1.15;
+  return fusion.map(c => ({
+    // Titre sur deux lignes (« Chapitre premier » / « Le départ ») : les deux parties séparées par un tiret
+    // (seulement si la 1re ligne est du type « Chapitre … » : un titre simplement trop long pour une ligne reste d'un seul tenant)
+    titre: c.morceaux && c.morceaux.length === 2 && (MOTIF_TITRE.test(c.morceaux[0]) || MOTIF_ROMAIN.test(c.morceaux[0])) ? c.morceaux.join(' — ') : c.texte, debut: c.debut,
+    niveau: /^(partie|part|livre|book|tome)\b/i.test(c.texte) || (plusieursTailles && c.h === grands[0] && !/^chap/i.test(c.texte)) ? 0 : 1,
+  }));
 }
 
 // Regroupe les morceaux de texte d'une page PDF en lignes, puis en paragraphes.
@@ -1077,24 +1124,30 @@ function paragraphesPdf(items) {
   const ecartType = ecarts.length ? ecarts[Math.floor(ecarts.length / 2)] : 14;
   const xMin = Math.min(...utiles.map(l => l.x)), xMax = Math.max(...utiles.map(l => l.xFin));
 
+  // Paragraphes : { texte, h = plus grande taille de caractères, lignes }
   const paras = [];
-  let texte = '';
+  let para = null;
   utiles.forEach((l, i) => {
     const t = l.texte.replace(/\s+/g, ' ').trim();
     if (i > 0) {
       const prec = utiles[i - 1];
       const ecart = prec.y - l.y;
-      const finPhrase = /[.!?…:»”]$/.test(texte);
-      const nouveau = ecart > ecartType * 1.45 || ecart < 0
+      const finPhrase = /[.!?…:»”]$/.test(para.texte);
+      const changeTaille = Math.max(l.h, prec.h) > Math.min(l.h, prec.h) * 1.25;   // un titre ne se colle pas au texte
+      // Ligne courte du type « Chapitre II » : c'est un titre, la ligne suivante commence un nouveau paragraphe.
+      const titreSeul = para.lignes === 1 && prec.xFin < xMax - l.h * 3 && (MOTIF_TITRE.test(para.texte) || MOTIF_ROMAIN.test(para.texte));
+      const nouveau = ecart > ecartType * 1.45 || ecart < 0 || changeTaille || titreSeul
         || (finPhrase && prec.xFin < xMax - l.h * 3)
         || (finPhrase && l.x > xMin + l.h * 0.8);
-      if (nouveau) { paras.push(texte); texte = t; return; }
-      if (/\p{L}-$/u.test(texte) && /^\p{Ll}/u.test(t)) texte = texte.slice(0, -1) + t;
-      else texte += ' ' + t;
-    } else texte = t;
+      if (nouveau) { paras.push(para); para = { texte: t, h: l.h, lignes: 1, morceaux: [t] }; return; }
+      if (/\p{L}-$/u.test(para.texte) && /^\p{Ll}/u.test(t)) para.texte = para.texte.slice(0, -1) + t;
+      else para.texte += ' ' + t;
+      para.morceaux.push(t);
+      para.h = Math.max(para.h, l.h); para.lignes++;
+    } else para = { texte: t, h: l.h, lignes: 1, morceaux: [t] };
   });
-  if (texte) paras.push(texte);
-  return paras;
+  if (para && para.texte) paras.push(para);
+  return paras.filter(p => p.texte);
 }
 
 // ---------- Index (pages, chapitres, phrases) ----------
@@ -1216,7 +1269,7 @@ function majEntete() {
   const k = chapitreDe(L, i);
   const titre = k >= 0 ? L.chapitres[k].affiche : L.titre;
   const parent = k >= 0 ? L.chapitres[k].parent : '';
-  if ($('chapitre').textContent !== titre) { $('chapitre').textContent = titre; $('chapitre').title = titre; }
+  if ($('chapitre').textContent !== titre) { $('chapitre').textContent = titre; $('chapitre').title = titre + ' — sommaire (S)'; }
   if ($('parent').textContent !== parent) $('parent').textContent = parent;
   const pc = Math.floor(i / L.mots.length * 100);
   const texte = `${pageDe(L, i)} / ${L.nbPages}`;
@@ -1705,6 +1758,43 @@ function ouvrirRecherche() {
   f.append(champ, info, ul);
   ouvrirPanneau('Rechercher', f);
   setTimeout(() => champ.focus(), 50);
+}
+
+// ---------- Sommaire : chapitres et accès direct à une page ----------
+function debutDePage(L, n) {
+  n = Math.max(1, Math.min(L.nbPages, Math.round(n) || 1));
+  return Math.min(L.mots.length - 1, L.pagesDebut ? L.pagesDebut[n - 1] : (n - 1) * MOTS_PAR_PAGE);
+}
+function afficherSommaire(focusPage) {
+  if (E.joue) pause();
+  const L = E.L, f = document.createDocumentFragment();
+  // Aller à une page
+  const ligne = el('div', null, 'ligne aller-page');
+  const champ = el('input'); champ.type = 'number'; champ.min = 1; champ.max = L.nbPages; champ.value = pageDe(L, E.i);
+  champ.inputMode = 'numeric'; champ.enterKeyHint = 'go'; champ.setAttribute('aria-label', 'Numéro de page');
+  const aller = el('button', 'Aller', 'btn-principal');
+  const allerPage = () => { const n = +champ.value; if (!n) return; fermerPanneau(); allerA(debutDePage(L, n)); };
+  aller.onclick = allerPage;
+  champ.onkeydown = e => { if (e.key === 'Enter') allerPage(); };
+  ligne.append(el('span', 'Page'), champ, el('span', '/ ' + L.nbPages), aller);
+  f.append(ligne);
+  // Chapitres
+  f.append(el('h3', 'Chapitres'));
+  if (!L.chapitres.length) f.append(el('p', 'Aucun chapitre reconnu dans ce livre.', 'vide'));
+  const ul = el('ul', null, 'liste-panneau sommaire'), courant = chapitreDe(L, E.i);
+  let actif = null;
+  L.chapitres.forEach((c, k) => {
+    const li = el('li'), titre = el('span', c.titre);
+    titre.style.paddingLeft = (c.niveau * 16) + 'px';
+    li.append(titre, el('small', 'p. ' + pageDe(L, c.debut)));
+    if (k === courant) { li.classList.add('actuel'); actif = li; }
+    li.onclick = () => { fermerPanneau(); allerA(c.debut); };
+    ul.append(li);
+  });
+  f.append(ul);
+  ouvrirPanneau('Sommaire', f);
+  if (focusPage) setTimeout(() => { champ.focus(); champ.select(); }, 60);
+  else if (actif) actif.scrollIntoView({ block: 'center' });
 }
 
 // ---------- Marque-pages (enregistrés avec la progression du livre) ----------
@@ -2230,6 +2320,10 @@ $('btnVocab').onclick = e => { e.currentTarget.blur(); afficherVocabulaire(); };
 $('btnRecherche').onclick = e => { e.currentTarget.blur(); ouvrirRecherche(); };
 $('btnMarque').onclick = e => { e.currentTarget.blur(); ajouterMarque(); };
 $('btnMarques').onclick = e => { e.currentTarget.blur(); afficherMarques(); };
+// Titre du chapitre → sommaire ; numéro de page → aller à une page (pas pendant le test de calibrage).
+$('chapitre').onclick = () => { if (E.L && E.source.type !== 'test') afficherSommaire(false); };
+$('pages').onclick = () => { if (E.L && E.source.type !== 'test') afficherSommaire(true); };
+$('chapitre').title = 'Sommaire (S)'; $('pages').title = 'Aller à une page (G)';
 $('pauseYeuxFermer').onclick = () => $('pauseYeuxEcran').classList.add('cache');
 $('ouvrirStats').onclick = afficherStats;
 $('ouvrirCalibrage').onclick = afficherCalibrage;
@@ -2335,7 +2429,9 @@ document.addEventListener('keydown', e => {
   actions.d = actions.D = () => chercherDefinition(E.i);
   actions.f = actions.F = ouvrirRecherche;
   actions.b = actions.B = ajouterMarque;
-  if (E.source.type === 'test') for (const k of 'dDfFbBmM') delete actions[k];
+  actions.s = actions.S = () => afficherSommaire(false);
+  actions.g = actions.G = () => afficherSommaire(true);
+  if (E.source.type === 'test') for (const k of 'dDfFbBmMsSgG') delete actions[k];
   if (actions[e.key]) { e.preventDefault(); if (e.target.blur) e.target.blur(); actions[e.key](); }
 });
 document.addEventListener('visibilitychange', () => {
