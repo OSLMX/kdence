@@ -107,6 +107,15 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
   color: var(--doux); font-size: .95rem; line-height: 1.4; max-width: 640px; margin: 0 auto;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
 #phrase b { color: var(--texte); font-weight: 600; }
+/* Encart vert : passer les pages d'avant le livre */
+#sauterDebut { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 5; max-width: calc(100% - 32px);
+  background: var(--vert, #2e7d4f); color: #fff; border: 0; border-radius: 999px; padding: .6em 1.1em; min-height: 44px;
+  font-size: .95rem; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.25); white-space: nowrap; }
+#sauterDebut span { margin-left: .35em; }
+#sauterDebut:hover { filter: brightness(1.1); }
+#lecteur.accueil #sauterDebut, #lecteur.test #sauterDebut { display: none !important; }
+#texte { scroll-padding-top: 70px; }
+#scene.avec-encart #texte { padding-top: 72px; }   /* la première ligne reste visible sous l'encart */
 /* Titre du chapitre, affiché en fondu au passage d'un chapitre (lecture mot à mot) */
 #carteChapitre { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   padding: 0 60px; text-align: center; pointer-events: none; }
@@ -407,6 +416,7 @@ body { overscroll-behavior-y: none; }
   <div id="scene">
     <div id="mot" class="cache"><span class="g"><span class="voisin"></span><span class="gm"></span></span><span class="pv"></span><span class="d"><span class="dm"></span><span class="voisin"></span></span></div>
     <div id="phrase" class="cache"></div>
+    <button id="sauterDebut" class="cache" title="Aller au début du livre">Passer directement au premier chapitre <span aria-hidden="true">→</span></button>
     <div id="carteChapitre" class="cache" aria-live="polite"><div class="cc-parent"></div><div class="cc-titre"></div></div>
     <div id="texte"><div class="page" id="pageTexte"></div></div>
   </div>
@@ -471,7 +481,10 @@ body { overscroll-behavior-y: none; }
 const MOTS_PAR_PAGE = 250;
 const FORMATS_ACCEPTES = /\.(epub|pdf|docx|txt|md|html?)$/i;
 const TITRE_PDF_RAPPORT = 1.3;   // PDF sans signets : un titre est au moins 1,3 fois plus grand que le texte courant
-const MOTS_MIN_IMPORT = 20;      // en dessous, un texte collé ou une page ne sont pas considérés comme lisibles
+const MOTS_MIN_IMPORT = 20;
+// Pages d'avant le livre (on propose de les passer) ; préface, avant-propos, introduction et prologue comptent comme le livre.
+const PAGES_AVANT_LIVRE = /^(couverture|cover|page de titre|title page|titre|faux[- ]titre|copyright|cr[ée]dits|mentions|du m[êe]me auteur|ouvrages? d[ue]|chez le m[êe]me [ée]diteur|d[ée]dicace|[ée]pigraphe|exergue|sommaire|table des mati[èe]res|table|contents|remerciements|acknowledg|note de l'[ée]diteur|[àa] propos)/i;
+const MOTS_AVANT_MIN = 20;       // en dessous, pas d'encart      // en dessous, un texte collé ou une page ne sont pas considérés comme lisibles
 const GESTE_BALAYAGE_PX = 50;      // distance minimale d'un balayage horizontal
 const GESTE_CRAN_PX = 40;          // un cran de vitesse tous les 40 px de balayage vertical
 const GESTE_CRAN_VITESSE = 10;     // mots/min par cran
@@ -1249,6 +1262,10 @@ function preparerRythme(L) {
     L.cumFin[j + 1] = L.cumFin[j] + (L.fin[j] & 1);
     L.cumPara[j + 1] = L.cumPara[j] + (L.fin[j] >> 1);
   }
+  // Premier vrai chapitre : le premier dont le titre n'est pas une page d'avant le livre (couverture, sommaire, remerciements…)
+  const premier = L.chapitres.find(c => c.debut < n && !PAGES_AVANT_LIVRE.test(c.titre.trim()));
+  L.premierChapitre = premier && premier.debut >= MOTS_AVANT_MIN && L.chapitres.some(c => c.debut < premier.debut || PAGES_AVANT_LIVRE.test(c.titre.trim()))
+    ? premier : null;
   // Débuts de chapitre : la position du premier mot → le chapitre le plus détaillé qui commence là
   L.debutsChap = new Map();
   for (const c of L.chapitres) if (c.debut < n) L.debutsChap.set(c.debut, c);
@@ -1329,6 +1346,9 @@ function majEntete() {
   if ($('numPage').textContent !== texte) $('numPage').textContent = texte;
   $('pourcent').textContent = pc + ' %';
   $('avance').style.width = (i / L.mots.length * 100) + '%';
+  const encart = !!(L.premierChapitre && i < L.premierChapitre.debut);
+  $('sauterDebut').classList.toggle('cache', !encart);
+  $('scene').classList.toggle('avec-encart', encart);
   // Débit réel du chapitre et temps restants (chapitre, livre)
   const n = L.mots.length;
   const a = k >= 0 ? L.chapitres[k].debut : 0, b = k + 1 < L.chapitres.length ? L.chapitres[k + 1].debut : n;
@@ -2419,6 +2439,7 @@ $('pauseYeuxFermer').onclick = () => $('pauseYeuxEcran').classList.add('cache');
 $('ouvrirStats').onclick = afficherStats;
 $('ouvrirParametres').onclick = () => montrerPage('parametres');
 $('btnPremierLivre').onclick = () => ouvrirImport();
+$('sauterDebut').onclick = e => { e.currentTarget.blur(); if (E.L && E.L.premierChapitre) allerA(E.L.premierChapitre.debut); };
 document.querySelectorAll('.retourAccueil').forEach(b => b.onclick = () => afficherAccueil());
 $('objectif').onchange = e => { prefs.objectif = Math.max(0, Math.round(+e.target.value) || 0); e.target.value = prefs.objectif; sauverPrefs(); afficherStats(); };
 $('panneauFermer').onclick = fermerPanneau;
