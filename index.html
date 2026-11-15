@@ -831,6 +831,7 @@ function ajouterChapitre(L, titre, niveau) {
 // Parcours d'un document HTML/XHTML : texte -> paragraphes, h1..h6 -> titres.
 const BLOCS = new Set('p div li blockquote pre section article dt dd figcaption td th tr table ul ol dl header footer aside nav hr body center'.split(' '));
 const IGNORES = new Set(['script', 'style', 'head', 'title', 'svg', 'math', 'noscript']);
+const PLUS_GROS_INTERTITRE = new WeakMap();   // chapitre → niveau h du plus gros intertitre vu dedans
 function parcourirDom(racine, L, opts) {
   let tampon = '';
   const vider = () => { if (tampon.trim()) ajouterPara(L, tampon); tampon = ''; };
@@ -852,8 +853,18 @@ function parcourirDom(racine, L, opts) {
       if (/^h[1-6]$/.test(nom)) {
         vider();
         e.querySelectorAll('[id]').forEach(ancre);
-        const niv = +nom[1] - 1;
-        ajouterTitre(L, e.textContent, niv, opts.titresSontChapitres && niv <= 2);
+        const niv = +nom[1] - 1, estChap = opts.titresSontChapitres && niv <= 2;
+        ajouterTitre(L, e.textContent, niv, estChap);
+        // Intertitre dans le texte (gros titre, souvent un sous-chapitre) absent de la table des matières :
+        // il devient un chapitre, un niveau sous le dernier chapitre — sauf si un chapitre commence déjà ici.
+        const titre = e.textContent.replace(/\s+/g, ' ').trim(), der = L.chapitres[L.chapitres.length - 1];
+        if (!estChap && titre && titre.length <= 220 && /\p{L}/u.test(titre) && !(der && der.debut === L.mots.length)) {
+          const parent = [...L.chapitres].reverse().find(c => !c.sous);
+          // Le plus gros intertitre du chapitre est au premier niveau ; les plus petits (h4 sous h2…) un cran en dessous.
+          const hmin = Math.min(niv, PLUS_GROS_INTERTITRE.get(parent || L) ?? niv);
+          PLUS_GROS_INTERTITRE.set(parent || L, hmin);
+          L.chapitres.push({ titre, niveau: (parent ? parent.niveau + 1 : 0) + (niv > hmin ? 1 : 0), debut: L.mots.length, sous: true });
+        }
         continue;
       }
       if (nom === 'br') { vider(); continue; }
