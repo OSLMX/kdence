@@ -246,6 +246,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 #toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); max-width: min(92vw, 520px); background: var(--bouton); color: var(--bouton-texte);
   padding: 10px 16px; border-radius: 10px; font-size: .92rem; text-align: center; z-index: 50; box-shadow: 0 4px 18px rgba(0,0,0,.25); pointer-events: none; }
 .livres .retirer { flex: none; font-size: .8rem; padding: .25em .6em; }
+#theme { width: 9em; text-align: center; }
 .reglage input[type=range] { width: 160px; }
 .reglage output { color: var(--doux); font-size: .85rem; margin-left: 6px; }
 #chargement { position: fixed; inset: 0; display: grid; place-items: center; background: var(--fond); font-size: 1.1rem; color: var(--doux); }
@@ -337,7 +338,7 @@ body { overscroll-behavior-y: none; }
   <h1>Paramètres</h1>
   <div class="carte">
     <h2>Lecture</h2>
-    <div class="reglage"><span>Vitesse par défaut (mots/min)</span>
+    <div class="reglage"><span>Vitesse de lecture (mots/min)</span>
       <input type="number" id="vitesseDefaut" min="20" max="2000" step="10" style="width:90px"></div>
     <div class="reglage"><span>Trouver la vitesse qui vous convient</span><button id="refaireTest">Refaire le test de vitesse</button></div>
     <div class="reglage"><span>Première lettre en rouge</span><input type="checkbox" id="premiereLettre"></div>
@@ -355,7 +356,7 @@ body { overscroll-behavior-y: none; }
     <div class="reglage"><span>La vitesse réglée est le débit réel</span><input type="checkbox" id="debitReel"></div>
     <div class="reglage"><span>Démarrage progressif<output id="v-demarrage"></output></span><input type="range" id="demarrage" min="0" max="20" step="1"></div>
     <div class="reglage"><span>Retour en arrière à la reprise<output id="v-reculReprise"></output></span><input type="range" id="reculReprise" min="0" max="15" step="1"></div>
-    <div class="reglage"><span>Pause pour les yeux</span><input type="checkbox" id="pauseYeux"></div>
+    <div class="reglage"><span>Pause automatique</span><input type="checkbox" id="pauseYeux"></div>
     <div class="reglage"><span>… toutes les<output id="v-pauseYeuxMin"></output></span><input type="range" id="pauseYeuxMin" min="5" max="60" step="5"></div>
     <h2 style="margin-top:18px">Affichage</h2>
     <div class="reglage"><span>Thème</span>
@@ -1323,9 +1324,8 @@ function demarrerLecteur(L, source, nom, prog) {
   if (prog && prog.mot) E.i = recaler(prog.mot);
   E.marques = prog && prog.marques ? prog.marques.map(m => ({ ...m, mot: recaler(m.mot) })) : [];
   $('lecteur').classList.toggle('test', source.type === 'test');
-  // Un livre déjà commencé garde sa propre vitesse ; un nouveau livre part de la vitesse par défaut.
-  if (prog && prog.vitesse) prefs.vitesse = prog.vitesse;
-  else if (source.type !== 'test') prefs.vitesse = prefs.vitesseDefaut;
+  // Une seule vitesse pour toute l'application : celle des Paramètres (aussi modifiée depuis le lecteur).
+  if (source.type !== 'test') prefs.vitesse = prefs.vitesseDefaut;
   E.mode = prog && prog.mode === 'guide' ? 'guide' : 'mot';
   $('modeLecture').value = E.mode;
   $('vitesse').value = prefs.vitesse;
@@ -2416,6 +2416,10 @@ $('refaireTest').onclick = () => ouvrirBienvenue(true);
 function changerVitesse(v) {
   prefs.vitesse = Math.max(20, Math.min(2000, Math.round(v) || 300));
   $('vitesse').value = prefs.vitesse;
+  // Hors test de vitesse, le réglage du lecteur devient la vitesse de l'application (Paramètres compris).
+  if (!(E.source && E.source.type === 'test') && !$('lecteur').classList.contains('accueil')) {
+    prefs.vitesseDefaut = prefs.vitesse; $('vitesseDefaut').value = prefs.vitesse;
+  }
   sauverPrefs();
   if (E.L) majEntete();
 }
@@ -2579,6 +2583,8 @@ document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (
 function changerVitesseDefaut(v) {
   prefs.vitesseDefaut = Math.max(20, Math.min(2000, Math.round(v) || 300));
   $('vitesseDefaut').value = prefs.vitesseDefaut;
+  // S'applique tout de suite : au livre ouvert, et à tous les livres à leur prochaine ouverture.
+  if (!(E.source && E.source.type === 'test')) { prefs.vitesse = prefs.vitesseDefaut; $('vitesse').value = prefs.vitesse; if (E.L) majEntete(); }
   sauverPrefs();
 }
 $('vitesseDefaut').onchange = e => changerVitesseDefaut(+e.target.value);
