@@ -112,7 +112,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
   padding: 0 60px; text-align: center; pointer-events: none; }
 #carteChapitre .cc-parent { color: var(--doux); font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; }
 #carteChapitre .cc-titre { font-family: var(--police-lecture); font-size: clamp(1.8rem, 6vw, 3rem); line-height: 1.2; max-width: 680px; }
-#carteChapitre.montre { animation: ccFondu var(--cc-duree, 5s) ease both; }
+#carteChapitre.montre { animation: ccFondu var(--cc-duree, 4s) ease both; }
 @keyframes ccFondu { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #carteChapitre.montre { animation: none; } }
 .mouvement-reduit #carteChapitre.montre { animation: none; }
@@ -495,7 +495,7 @@ const DEFAUTS = {
   avertiVeille: false,
   pauseFinPhrase: 400,   // ms, minimum après . ! ? …
   pauseParagraphe: 600,  // ms d'écran vide en fin de paragraphe
-  pauseChapitre: 5,      // s : titre du chapitre affiché en lecture mot à mot (0 = jamais)
+  pauseChapitre: 4,      // s : titre du chapitre affiché en lecture mot à mot (0 = jamais)
   rythmeFrequence: true,
   debitReel: false,      // la vitesse réglée devient le débit moyen réel du livre
   demarrage: 8,          // mots de démarrage progressif (0 = désactivé)
@@ -520,6 +520,8 @@ const $ = id => document.getElementById(id);
 // ---------- Préférences locales ----------
 const prefs = Object.assign({}, DEFAUTS, lireLocal('lc:prefs') || {});
 if (prefs.vitesseDefaut == null) prefs.vitesseDefaut = prefs.vitesse;
+// Le titre de chapitre est passé de 5 à 4 s par défaut : l'ancien réglage par défaut suit.
+if (!prefs.titreChapitre4s) { if (prefs.pauseChapitre === 5) prefs.pauseChapitre = 4; prefs.titreChapitre4s = true; }
 function lireLocal(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
 function ecrireLocal(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} }
 // Pendant le test de vitesse, certains réglages sont remplacés pour un temps : on enregistre les vrais.
