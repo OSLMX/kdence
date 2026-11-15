@@ -107,6 +107,15 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
   color: var(--doux); font-size: .95rem; line-height: 1.4; max-width: 640px; margin: 0 auto;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
 #phrase b { color: var(--texte); font-weight: 600; }
+/* Titre du chapitre, affiché en fondu au passage d'un chapitre (lecture mot à mot) */
+#carteChapitre { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 0 60px; text-align: center; pointer-events: none; }
+#carteChapitre .cc-parent { color: var(--doux); font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; }
+#carteChapitre .cc-titre { font-family: var(--police-lecture); font-size: clamp(1.8rem, 6vw, 3rem); line-height: 1.2; max-width: 680px; }
+#carteChapitre.montre { animation: ccFondu var(--cc-duree, 5s) ease both; }
+@keyframes ccFondu { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #carteChapitre.montre { animation: none; } }
+.mouvement-reduit #carteChapitre.montre { animation: none; }
 #modeLecture { padding: .4em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); color: var(--texte); font: inherit; }
 #scene { touch-action: manipulation; }
 #lecteur.joue #scene { touch-action: none; }
@@ -332,6 +341,7 @@ body { overscroll-behavior-y: none; }
     <h2 style="margin-top:18px">Rythme</h2>
     <div class="reglage"><span>Pause en fin de phrase<output id="v-pauseFinPhrase"></output></span><input type="range" id="pauseFinPhrase" min="0" max="1500" step="50"></div>
     <div class="reglage"><span>Pause en fin de paragraphe<output id="v-pauseParagraphe"></output></span><input type="range" id="pauseParagraphe" min="0" max="1500" step="50"></div>
+    <div class="reglage"><span>Titre de chapitre à l'écran<output id="v-pauseChapitre"></output></span><input type="range" id="pauseChapitre" min="0" max="10" step="1"></div>
     <div class="reglage"><span>Rythme selon la fréquence des mots</span><input type="checkbox" id="rythmeFrequence"></div>
     <div class="reglage"><span>La vitesse réglée est le débit réel</span><input type="checkbox" id="debitReel"></div>
     <div class="reglage"><span>Démarrage progressif<output id="v-demarrage"></output></span><input type="range" id="demarrage" min="0" max="20" step="1"></div>
@@ -397,6 +407,7 @@ body { overscroll-behavior-y: none; }
   <div id="scene">
     <div id="mot" class="cache"><span class="g"><span class="voisin"></span><span class="gm"></span></span><span class="pv"></span><span class="d"><span class="dm"></span><span class="voisin"></span></span></div>
     <div id="phrase" class="cache"></div>
+    <div id="carteChapitre" class="cache" aria-live="polite"><div class="cc-parent"></div><div class="cc-titre"></div></div>
     <div id="texte"><div class="page" id="pageTexte"></div></div>
   </div>
   <button id="btnDico" title="Définition (D)" aria-label="Définition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5.5c3-1.5 6.5-1.5 10 1 3.5-2.5 7-2.5 10-1V19c-3-1.5-6.5-1.5-10 1-3.5-2.5-7-2.5-10-1z"/><path d="M12 6.5V20"/></svg></button>
@@ -484,6 +495,7 @@ const DEFAUTS = {
   avertiVeille: false,
   pauseFinPhrase: 400,   // ms, minimum après . ! ? …
   pauseParagraphe: 600,  // ms d'écran vide en fin de paragraphe
+  pauseChapitre: 5,      // s : titre du chapitre affiché en lecture mot à mot (0 = jamais)
   rythmeFrequence: true,
   debitReel: false,      // la vitesse réglée devient le débit moyen réel du livre
   demarrage: 8,          // mots de démarrage progressif (0 = désactivé)
@@ -980,7 +992,7 @@ function lireDocumentWeb(doc) {
 function lireHtml(buf) {
   return lireDocumentWeb(new DOMParser().parseFromString(typeof buf === 'string' ? buf : decoderTexte(buf), 'text/html'));
 }
-// Texte importé (collé, page web, partage) : enregistré comme une petite page HTML propre, reconstruite à partir du texte seul.
+// Texte importé (collé ou partagé) : enregistré comme une petite page HTML propre, reconstruite à partir du texte seul.
 function serialiserLivre(L, source) {
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   let h = `<!doctype html>\n<html lang="fr"><head><meta charset="utf-8"><title>${esc(L.titre)}</title>`
@@ -1002,28 +1014,6 @@ async function importerTexte(L, source) {
   fermerPanneau();
   await ouvrirFichier(new File([serialiserLivre(L, source)], nom, { type: 'text/html' }));
 }
-async function chargerPageWeb(adresse) {
-  adresse = adresse.trim();
-  if (!/^https?:\/\//i.test(adresse)) adresse = 'https://' + adresse;
-  let r;
-  if (modeBiblio) r = await api('api/page?url=' + encodeURIComponent(adresse));
-  else {
-    // Wikipédia, Wikisource… proposent une version de chaque page lisible directement par le navigateur.
-    const u = new URL(adresse), wiki = /\.(wikipedia|wikisource|wikibooks|wikinews)\.org$/.test(u.hostname) && u.pathname.match(/^\/wiki\/(.+)$/);
-    const cible = wiki ? `${u.origin}/api/rest_v1/page/html/${wiki[1]}` : adresse;
-    try { r = await fetch(cible); }
-    catch { throw new Error(PAGE_NON_LISIBLE); }        // le site interdit la lecture directe (CORS) ou pas de réseau
-    if (!r.ok) throw new Error('La page a répondu « ' + r.status + ' ».');
-  }
-  const brut = await r.text();
-  const L = /text\/plain/i.test(r.headers.get('content-type') || '') ? lireTexteBrut(brut) : lireHtml(brut);
-  if (!L.titre) L.titre = new URL(adresse).hostname;
-  if (L.mots.length < MOTS_MIN_IMPORT) throw new Error('Aucun article lisible trouvé sur cette page.');
-  return { L, adresse };
-}
-const PAGE_NON_LISIBLE = 'Ce site ne se laisse pas lire directement depuis le téléphone. Sur la page, faites un appui long sur le texte, '
-  + '« Tout sélectionner », puis « Partager » → Kdence (ou copiez le texte et utilisez « Coller un texte »).';
-
 function ouvrirCollage(texteInitial = '', titreInitial = '') {
   const f = document.createDocumentFragment();
   const titre = el('input'); titre.type = 'text'; titre.className = 'champ'; titre.placeholder = 'Titre (facultatif)'; titre.value = titreInitial;
@@ -1039,26 +1029,8 @@ function ouvrirCollage(texteInitial = '', titreInitial = '') {
   ouvrirPanneau('Coller un texte', f);
   if (!texteInitial) setTimeout(() => zone.focus(), 50);
 }
-function ouvrirPageWeb(adresseInitiale = '') {
-  const f = document.createDocumentFragment();
-  const champ = el('input'); champ.type = 'url'; champ.className = 'champ'; champ.placeholder = 'https://…'; champ.value = adresseInitiale;
-  const info = el('p', '', 'note');
-  const ok = el('button', 'Lire la page', 'btn-principal');
-  const lancer = async () => {
-    if (!champ.value.trim()) return;
-    ok.disabled = true; info.textContent = 'Chargement de la page…';
-    try { const { L, adresse } = await chargerPageWeb(champ.value); await importerTexte(L, adresse); }
-    catch (e) { info.textContent = e.message; }
-    finally { ok.disabled = false; }
-  };
-  ok.onclick = lancer;
-  champ.onkeydown = e => { if (e.key === 'Enter') lancer(); };
-  f.append(champ, ok, info);
-  ouvrirPanneau('Lire une page web', f);
-  if (adresseInitiale) lancer(); else setTimeout(() => champ.focus(), 50);
-}
 // Partage Android (« Partager » → Kdence) : texte sélectionné ou adresse d'une page.
-// Texte assez long → lu tel quel ; sinon une adresse → page web ; sinon texte court → fenêtre « Coller » préremplie.
+// Texte assez long → lu tel quel ; adresse seule → message ; sinon texte court → fenêtre « Coller » préremplie.
 function analyserPartage(titre, texte, adresse) {
   texte = (texte || '').trim(); titre = (titre || '').trim();
   const lien = (adresse || '').trim() || (texte.match(/https?:\/\/\S+/) || [''])[0];
@@ -1075,7 +1047,7 @@ function traiterPartage(titre, texte, adresse) {
     const L = lireTexteBrut(p.texte); L.titre = p.titre;
     return importerTexte(L, p.source).catch(e => { $('message').textContent = e.message; });
   }
-  if (p.action === 'page') return ouvrirPageWeb(p.adresse);
+  if (p.action === 'page') return afficherToast('Pour lire un article, sélectionnez son texte puis « Partager » → Kdence.', 6000);
   if (p.action === 'coller') return ouvrirCollage(p.texte, p.titre);
 }
 
@@ -1275,13 +1247,20 @@ function preparerRythme(L) {
     L.cumFin[j + 1] = L.cumFin[j] + (L.fin[j] & 1);
     L.cumPara[j + 1] = L.cumPara[j] + (L.fin[j] >> 1);
   }
+  // Débuts de chapitre : la position du premier mot → le chapitre le plus détaillé qui commence là
+  L.debutsChap = new Map();
+  for (const c of L.chapitres) if (c.debut < n) L.debutsChap.set(c.debut, c);
+  L.cumChap = new Int32Array(n + 1);
+  for (let j = 0; j < n; j++) L.cumChap[j + 1] = L.cumChap[j] + (L.debutsChap.has(j) ? 1 : 0);
 }
 // Base en ms par mot. Avec « débit réel », elle est corrigée pour que le débit moyen du livre égale la consigne.
+// Titre de chapitre à l'écran (lecture mot à mot seulement), en ms
+function chapitreMs() { return E.mode === 'guide' ? 0 : prefs.pauseChapitre * 1000; }
 function baseMs(L) {
   const consigne = 60000 / prefs.vitesse;
   if (!prefs.debitReel || !L) return consigne;
   const n = L.mots.length, M = L.cumMult[n], nF = L.cumFin[n], nP = L.cumPara[n];
-  const reste = consigne * n - nP * prefs.pauseParagraphe;
+  const reste = consigne * n - nP * prefs.pauseParagraphe - (L.cumChap ? L.cumChap[n] : 0) * chapitreMs();
   let b = reste / (M + nF);                                  // cas où la base dépasse la pause de fin de phrase
   if (b < prefs.pauseFinPhrase) b = (reste - nF * prefs.pauseFinPhrase) / M;
   return Math.max(b, 10);
@@ -1289,7 +1268,7 @@ function baseMs(L) {
 function totalMs(L, a, b) { // durée des mots a .. b-1
   const base = baseMs(L);
   return base * (L.cumMult[b] - L.cumMult[a]) + (L.cumFin[b] - L.cumFin[a]) * Math.max(base, prefs.pauseFinPhrase)
-    + (L.cumPara[b] - L.cumPara[a]) * prefs.pauseParagraphe;
+    + (L.cumPara[b] - L.cumPara[a]) * prefs.pauseParagraphe + (L.cumChap[b] - L.cumChap[a]) * chapitreMs();
 }
 // d = base · f_longueur · f_fréquence (+ 0,4 · base après , ; :) + pause de fin de phrase ; la pause de paragraphe est à part (écran vide).
 function dureeMot(L, j) {
@@ -1315,11 +1294,11 @@ function debutPhrase(L, j) { return j <= 0 || L.debutBloc[j] || finPhrase(L.mots
 // ---------- Lecteur ----------
 const E = { L: null, i: 0, joue: false, minuteur: null, prochain: 0, source: null, nom: '', derniereSauvegarde: 0, fenetre: null,
   positionChoisie: false, rampe: 0, mode: 'mot', ligneGuide: null, finGroupe: 1, termine: null,
-  marques: [], session: null, tJeu: null, actifYeux: 0, surFin: null, bvTest: false };
+  marques: [], session: null, tJeu: null, actifYeux: 0, surFin: null, bvTest: false, carteChapitre: null };
 
 function demarrerLecteur(L, source, nom, prog) {
   terminerSession();
-  Object.assign(E, { L, source, nom, i: 0, joue: false, fenetre: null, surFin: null, actifYeux: 0 });
+  Object.assign(E, { L, source, nom, i: 0, joue: false, fenetre: null, surFin: null, actifYeux: 0, carteChapitre: null });
   // Positions enregistrées avec un autre découpage : recalage au prorata.
   const recaler = m => Math.min(L.mots.length - 1, prog.total && prog.total !== L.mots.length ? Math.round(m / prog.total * L.mots.length) : m);
   if (prog && prog.mot) E.i = recaler(prog.mot);
@@ -1402,6 +1381,15 @@ function afficherMot() {
   d.classList.toggle('deborde', dm.offsetWidth + apres.offsetWidth > d.clientWidth + 1);
   afficherPhrase();
 }
+function afficherCarteChapitre(c) {
+  viderMot(); $('phrase').classList.add('cache'); majEntete();
+  const carte = $('carteChapitre');
+  carte.querySelector('.cc-parent').textContent = c.parent || '';
+  carte.querySelector('.cc-titre').textContent = c.affiche || c.titre;
+  carte.style.setProperty('--cc-duree', prefs.pauseChapitre + 's');
+  carte.classList.remove('cache', 'montre'); void carte.offsetWidth; carte.classList.add('montre');
+}
+function masquerCarteChapitre() { $('carteChapitre').classList.add('cache'); $('carteChapitre').classList.remove('montre'); }
 function viderMot() { if (E.mode !== 'guide') for (const s of $('mot').querySelectorAll('span:not(.g):not(.d)')) s.textContent = ''; }
 // Mots précédents et suivants affichés en transparence, sans sortir du paragraphe.
 function motsVoisins(L, i, fin = i + 1) {
@@ -1486,6 +1474,13 @@ function boucle() {
   if (prefs.pauseYeux && E.source.type !== 'test' && E.actifYeux + performance.now() - E.tJeu >= prefs.pauseYeuxMin * 60000) {
     pause(); E.actifYeux = 0; pauseYeux(); return;
   }
+  const chap = E.L.debutsChap && E.L.debutsChap.get(E.i);
+  if (chap && E.mode !== 'guide' && prefs.pauseChapitre > 0 && E.carteChapitre !== E.i) {
+    E.carteChapitre = E.i;
+    afficherCarteChapitre(chap);
+    E.minuteur = setTimeout(() => { masquerCarteChapitre(); boucle(); }, prefs.pauseChapitre * 1000);
+    return;
+  }
   afficherMot(); majEntete();
   const maintenant = performance.now();
   if (E.prochain < maintenant - 300) E.prochain = maintenant;
@@ -1515,6 +1510,7 @@ function boucle() {
 }
 function pause(sauver = true) {
   E.joue = false;
+  masquerCarteChapitre();
   E.positionChoisie = false;
   if (E.tJeu != null) {           // temps de lecture active (pauses exclues)
     const d = performance.now() - E.tJeu;
@@ -1536,6 +1532,7 @@ function basculer() { E.joue ? pause() : jouer(); }
 // Position choisie par l'utilisateur : pas de retour en arrière à la reprise.
 function allerA(j) {
   E.i = Math.max(0, Math.min(E.L.mots.length - 1, j));
+  E.carteChapitre = null;
   E.positionChoisie = true;
   if (E.joue) { afficherMot(); majEntete(); E.prochain = performance.now(); clearTimeout(E.minuteur); boucle(); }
   else { majEntete(); afficherTexte(); }
@@ -2535,14 +2532,13 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { if (E.L) { sauvegarder(true); terminerSession(); } });
 
 // Accueil
-// Bouton « Importer » : fichier, texte collé ou page web.
+// Bouton « Importer » : fichier ou texte collé.
 function ouvrirImport() {
   const choix = (titre, action) => { const b = el('button', null, 'choix-import'); b.append(el('b', titre)); b.onclick = action; return b; };
   const f = document.createDocumentFragment();
   f.append(
     choix('Ouvrir un fichier', () => { fermerPanneau(); $('fichier').click(); }),
-    choix('Coller un texte', () => ouvrirCollage()),
-    choix('Lire une page web', () => ouvrirPageWeb()));
+    choix('Coller un texte', () => ouvrirCollage()));
   ouvrirPanneau('Importer', f);
 }
 $('btnImporter').onclick = ouvrirImport;
@@ -2580,6 +2576,7 @@ $('enregistrerDossier').onclick = async () => {
   const rafraichir = () => { if (E.L) majEntete(); };
   lierReglage('pauseFinPhrase', ms, rafraichir);
   lierReglage('pauseParagraphe', ms, rafraichir);
+  lierReglage('pauseChapitre', v => v ? v + ' s' : 'jamais', rafraichir);
   lierReglage('rythmeFrequence', null, () => { if (E.L) { preparerRythme(E.L); majEntete(); } });
   lierReglage('debitReel', null, rafraichir);
   lierReglage('premiereLettre', null, () => { if (E.joue) afficherMot(); });
