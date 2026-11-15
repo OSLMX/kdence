@@ -1363,8 +1363,10 @@ function demarrerLecteur(L, source, nom, prog) {
 function majEntete() {
   const L = E.L, i = E.i;
   const k = chapitreDe(L, i);
-  const titre = k >= 0 ? L.chapitres[k].affiche : L.titre;
-  const parent = k >= 0 ? L.chapitres[k].parent : '';
+  // En-tête : le chapitre principal seulement, jamais un intertitre du texte (place comptée sur téléphone).
+  let kp = k; while (kp > 0 && L.chapitres[kp].sous) kp--;
+  const titre = kp >= 0 ? L.chapitres[kp].affiche : L.titre;
+  const parent = kp >= 0 ? L.chapitres[kp].parent : '';
   if ($('chapitre').textContent !== titre) { $('chapitre').textContent = titre; $('chapitre').title = titre + ' — sommaire (S)'; }
   if ($('parent').textContent !== parent) $('parent').textContent = parent;
   const pc = Math.floor(i / L.mots.length * 100);
@@ -1377,7 +1379,8 @@ function majEntete() {
   $('scene').classList.toggle('avec-encart', encart);
   // Temps restants (chapitre, livre)
   const n = L.mots.length;
-  const b = k + 1 < L.chapitres.length ? L.chapitres[k + 1].debut : n;
+  let kb = k + 1; while (kb < L.chapitres.length && L.chapitres[kb].sous) kb++;   // fin du chapitre principal
+  const b = kb < L.chapitres.length ? L.chapitres[kb].debut : n;
   const t2 = `chap. ${formatDuree(totalMs(L, i, b))} · livre ${formatDuree(totalMs(L, i, n))}`;
   if ($('restant').textContent !== t2) $('restant').textContent = t2;
 }
