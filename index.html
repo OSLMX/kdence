@@ -145,10 +145,23 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 .vitesse input { width: 72px; text-align: center; padding: .4em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
 .vitesse small { color: var(--doux); }
 /* Bouton dictionnaire et panneau latéral */
-#btnDico { position: fixed; right: 8px; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; padding: 0;
+#btnDico, #btnNotes { position: fixed; right: 8px; top: 50%; margin-top: -56px; width: 48px; height: 48px; border-radius: 50%; padding: 0;
   display: grid; place-items: center; z-index: 20; transition: opacity .3s; }
-#btnDico svg { width: 24px; height: 24px; }
-#lecteur.joue #btnDico { opacity: .3; } #lecteur.joue #btnDico:hover { opacity: 1; }
+#btnNotes { margin-top: 8px; }
+#btnDico svg, #btnNotes svg { width: 24px; height: 24px; }
+#lecteur.joue #btnDico, #lecteur.joue #btnNotes { opacity: .3; } #lecteur.joue #btnDico:hover, #lecteur.joue #btnNotes:hover { opacity: 1; }
+/* Carnet de notes du livre */
+#panneau.large { width: 560px; }
+.carnet-outils { display: flex; gap: 6px; flex-wrap: wrap; position: sticky; top: -12px; background: var(--fond); padding: 4px 0 10px; z-index: 1; }
+.carnet-outils button { min-width: 42px; min-height: 40px; padding: 0 .7em; }
+.carnet-page { min-height: 55vh; outline: none; font-family: var(--police-lecture); font-size: 1.12rem; line-height: 1.6; background: var(--fond2);
+  border: 1px solid var(--trait); border-radius: 10px; padding: 14px 16px; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.carnet-page:focus { border-color: var(--doux); }
+.carnet-page:empty::before { content: attr(data-vide); color: var(--doux); }
+#panneauCorps .carnet-page h3 { font-size: 1.25rem; font-weight: 600; margin: .6em 0 .3em; text-transform: none; letter-spacing: 0; color: var(--texte); }
+.carnet-page blockquote { margin: .5em 0; padding-left: 12px; border-left: 3px solid var(--accent); color: var(--doux); font-style: italic; }
+.carnet-page ul, .carnet-page ol { padding-left: 1.4em; }
+.carnet-etat { color: var(--doux); font-size: .8rem; margin: 6px 0 0; text-align: right; min-height: 1.2em; }
 #pageTexte { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #voile { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 30; }
 #panneau { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 100vw; background: var(--fond); border-left: 1px solid var(--trait);
@@ -166,7 +179,8 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 .liste-panneau { list-style: none; padding: 0; margin: 0; }
 .liste-panneau li { padding: 8px 2px; border-bottom: 1px solid var(--trait); cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
 .liste-panneau li span { flex: 1; } .liste-panneau small { color: var(--doux); }
-@media (max-width: 600px) { #panneau { width: 90vw; } }
+@media (max-width: 600px) { #panneau { width: 90vw; } #panneau.large { width: 100vw; }
+  .carnet-outils { gap: 4px; } .carnet-outils button { min-width: 38px; padding: 0 .45em; font-size: .9rem; } }
 @media (max-width: 760px) { #texte { padding-right: 64px; } }
 
 .outil { padding: .4em .55em; }
@@ -175,7 +189,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 #lecteur.test #chapitre::after { content: ""; }
 .aller-page { margin-bottom: 6px; } .aller-page input { width: 90px; font-size: 1rem; padding: .4em .5em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); text-align: center; }
 .sommaire li.actuel span { font-weight: 600; color: var(--accent); }
-#lecteur.test .vitesse, #lecteur.test #modeLecture, #lecteur.test .outil, #lecteur.test #btnDico, #lecteur.test label, #lecteur.test #phrasePrec, #lecteur.test #phraseSuiv, #lecteur.test .aide { display: none !important; }
+#lecteur.test .vitesse, #lecteur.test #modeLecture, #lecteur.test .outil, #lecteur.test #btnDico, #lecteur.test #btnNotes, #lecteur.test label, #lecteur.test #phrasePrec, #lecteur.test #phraseSuiv, #lecteur.test .aide { display: none !important; }
 .page input[type=number], #accueil input[type=number] { padding: .35em .5em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond); }
 .page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
 .page h1 { font-family: var(--police-lecture); font-weight: 400; font-size: 2rem; margin: 12px 0 18px; }
@@ -237,7 +251,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 /* Lecture du test : même moteur que le lecteur, sur fond noir, sans les commandes */
 #lecteur.accueil { --fond: #000; --fond2: #141418; --texte: #f3ede2; --doux: #8d8a84; --trait: #2a2a30; --accent: #ff6b5b; --bouton: #f3ede2; --bouton-texte: #000;
   background: #000; color: var(--texte); }
-#lecteur.accueil #haut, #lecteur.accueil #btnDico { display: none !important; }
+#lecteur.accueil #haut, #lecteur.accueil #btnDico, #lecteur.accueil #btnNotes { display: none !important; }
 #lecteur.accueil #bas { border-top: 0; }
 /* Rangées fixes : masquer l'en-tête ne doit pas faire glisser la zone du mot dans une rangée vide */
 #haut { grid-row: 1; } #scene { grid-row: 2; } #bas { grid-row: 3; }
@@ -422,6 +436,7 @@ body { overscroll-behavior-y: none; }
     <div id="texte"><div class="page" id="pageTexte"></div></div>
   </div>
   <button id="btnDico" title="Définition (D)" aria-label="Définition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5.5c3-1.5 6.5-1.5 10 1 3.5-2.5 7-2.5 10-1V19c-3-1.5-6.5-1.5-10 1-3.5-2.5-7-2.5-10-1z"/><path d="M12 6.5V20"/></svg></button>
+  <button id="btnNotes" title="Carnet de notes (N)" aria-label="Carnet de notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M8 13h5M8 17h7"/><path d="M18.4 2.6a1.9 1.9 0 0 1 2.7 2.7L14 12.4l-3.4.9.9-3.4z"/></svg></button>
   <div id="bas">
     <button id="phrasePrec" title="Phrase précédente (←)">⏮</button>
     <button id="jouer" title="Lecture / pause (Espace)">▶</button>
@@ -1323,6 +1338,7 @@ function demarrerLecteur(L, source, nom, prog) {
   const recaler = m => Math.min(L.mots.length - 1, prog.total && prog.total !== L.mots.length ? Math.round(m / prog.total * L.mots.length) : m);
   if (prog && prog.mot) E.i = recaler(prog.mot);
   E.marques = prog && prog.marques ? prog.marques.map(m => ({ ...m, mot: recaler(m.mot) })) : [];
+  E.notes = (prog && typeof prog.notes === 'string') ? prog.notes : '';
   $('lecteur').classList.toggle('test', source.type === 'test');
   // Une seule vitesse pour toute l'application : celle des Paramètres (aussi modifiée depuis le lecteur).
   if (source.type !== 'test') prefs.vitesse = prefs.vitesseDefaut;
@@ -1618,7 +1634,7 @@ function etatProgression() {
   const L = E.L;
   return { mot: E.i, total: L.mots.length, page: pageDe(L, E.i), pages: L.nbPages, pourcentage: Math.floor(E.i / L.mots.length * 100),
     vitesse: prefs.vitesse, titre: L.titre, fichier: E.nom, maj: new Date().toISOString(),
-    restantMs: Math.round(totalMs(L, E.i, L.mots.length)), mode: E.mode, marques: E.marques };
+    restantMs: Math.round(totalMs(L, E.i, L.mots.length)), mode: E.mode, marques: E.marques, notes: E.notes || '' };
 }
 function sauvegarder(balise) {
   if (!E.L || E.source.type === 'test') return;
@@ -1637,6 +1653,8 @@ function sauvegarder(balise) {
 
 // ---------- Panneau latéral (dictionnaire, listes) ----------
 function ouvrirPanneau(titre, contenu) {
+  if (E.carnetFlush) { E.carnetFlush(); E.carnetFlush = null; }
+  $('panneau').classList.remove('large');
   reserverRetour();
   $('panneauTitre').textContent = titre;
   $('panneauCorps').replaceChildren(contenu);
@@ -1646,12 +1664,94 @@ function ouvrirPanneau(titre, contenu) {
   $('panneau').setAttribute('aria-hidden', 'false');
 }
 function fermerPanneau() {
+  if (E.carnetFlush) { E.carnetFlush(); E.carnetFlush = null; }
+  $('panneau').classList.remove('large');
   $('voile').classList.add('cache');
   $('panneau').classList.remove('ouvert');
   $('panneau').setAttribute('aria-hidden', 'true');
 }
 const panneauOuvert = () => $('panneau').classList.contains('ouvert');
 function el(tag, texte, classe) { const e = document.createElement(tag); if (texte != null) e.textContent = texte; if (classe) e.className = classe; return e; }
+
+// ---------- Carnet de notes (un par livre, gardé avec la position : synchronisé comme elle) ----------
+const CARNET_BALISES = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'H3', 'UL', 'OL', 'LI', 'P', 'DIV', 'BR', 'BLOCKQUOTE']);
+// Seules quelques balises de mise en forme sont gardées, sans aucun attribut (le carnet peut venir de OneDrive).
+function nettoyerNotes(html) {
+  const d = new DOMParser().parseFromString('<body>' + (html || ''), 'text/html');
+  const net = n => {
+    for (const c of [...n.childNodes]) {
+      if (c.nodeType === 3) continue;
+      if (c.nodeType !== 1 || /^(SCRIPT|STYLE|TEMPLATE|IFRAME|OBJECT|SVG|MATH)$/i.test(c.tagName)) { c.remove(); continue; }
+      net(c);
+      if (!CARNET_BALISES.has(c.tagName)) { c.replaceWith(...c.childNodes); continue; }
+      for (const a of [...c.attributes]) c.removeAttribute(a.name);
+    }
+  };
+  net(d.body);
+  return d.body.innerHTML;
+}
+function phraseEnCours(L, j) {
+  let a = j; while (a > 0 && !debutPhrase(L, a)) a--;
+  let b = a + 1; while (b < L.mots.length && !debutPhrase(L, b)) b++;
+  let t = ''; for (let k = a; k < b; k++) t += L.mots[k] + (k < b - 1 && !L.colle[k] ? ' ' : '');
+  return { texte: t, page: pageDe(L, a) };
+}
+function afficherCarnet() {
+  if (!E.L || E.source.type === 'test') return;
+  if (E.joue) pause();
+  const f = el('div', null, 'carnet');
+  const outils = el('div', null, 'carnet-outils');
+  const page = el('div', null, 'carnet-page');
+  page.contentEditable = 'true'; page.spellcheck = true; page.dataset.vide = 'Vos notes sur ce livre…';
+  page.setAttribute('role', 'textbox'); page.setAttribute('aria-multiline', 'true'); page.setAttribute('aria-label', 'Notes');
+  page.innerHTML = nettoyerNotes(E.notes);
+  const etat = el('p', '', 'carnet-etat');
+  let minuteur = null, plage = null;
+  const sauver = () => {
+    minuteur = null;
+    E.notes = page.textContent.trim() ? nettoyerNotes(page.innerHTML) : '';
+    if (!E.notes) page.replaceChildren();
+    sauvegarder(); etat.textContent = 'Enregistré';
+  };
+  const enregistrer = () => { clearTimeout(minuteur); etat.textContent = ''; minuteur = setTimeout(sauver, 600); };
+  page.oninput = enregistrer;
+  // Garde l'endroit du curseur, pour que les boutons agissent au bon endroit (même si le clavier du téléphone s'est fermé).
+  const memoriser = () => { const s = getSelection(); if (s.rangeCount && page.contains(s.anchorNode)) plage = s.getRangeAt(0).cloneRange(); };
+  page.addEventListener('keyup', memoriser); page.addEventListener('mouseup', memoriser); page.addEventListener('touchend', () => setTimeout(memoriser, 0));
+  document.addEventListener('selectionchange', memoriser);
+  const placer = () => {
+    if (document.activeElement !== page) page.focus();
+    const s = getSelection();
+    if (s.rangeCount && page.contains(s.anchorNode)) return;
+    s.removeAllRanges();
+    if (plage && page.contains(plage.startContainer)) s.addRange(plage);
+    else { const r = document.createRange(); r.selectNodeContents(page); r.collapse(false); s.addRange(r); }
+  };
+  const bouton = (contenu, titre, action) => {
+    const b = el('button'); b.type = 'button'; b.title = titre; b.setAttribute('aria-label', titre); b.append(contenu);
+    b.onmousedown = e => e.preventDefault();      // le texte garde le curseur
+    b.onclick = () => { placer(); action(); enregistrer(); memoriser(); };
+    outils.append(b);
+  };
+  bouton(el('b', 'G'), 'Gras', () => document.execCommand('bold'));
+  bouton(el('i', 'I'), 'Italique', () => document.execCommand('italic'));
+  bouton(el('u', 'S'), 'Souligné', () => document.execCommand('underline'));
+  bouton('Titre', 'Intertitre', () => document.execCommand('formatBlock', false, /h3/i.test(document.queryCommandValue('formatBlock')) ? 'div' : 'h3'));
+  bouton('• Liste', 'Liste à puces', () => document.execCommand('insertUnorderedList'));
+  bouton('❝ Citer', 'Insérer la phrase en cours, avec sa page', () => {
+    const { texte, page: p } = phraseEnCours(E.L, E.i);
+    const q = el('blockquote', texte + ' (p. ' + p + ')');
+    document.execCommand('insertHTML', false, q.outerHTML + '<div><br></div>');
+  });
+  f.append(outils, page, etat);
+  ouvrirPanneau('Notes', f);
+  $('panneau').classList.add('large');
+  E.carnetFlush = () => { if (minuteur) { clearTimeout(minuteur); sauver(); } };   // après ouvrirPanneau, qui vide l'ancien
+  const nettoyerEcoute = new MutationObserver(() => { if (!$('panneauCorps').contains(page)) { document.removeEventListener('selectionchange', memoriser); nettoyerEcoute.disconnect(); } });
+  nettoyerEcoute.observe($('panneauCorps'), { childList: true });
+  // Sur ordinateur, on peut écrire tout de suite ; sur téléphone, le clavier n'apparaît qu'au toucher de la page.
+  if (matchMedia('(pointer: fine)').matches) placer();
+}
 
 // ---------- Dictionnaire (Wiktionnaire) ----------
 // Seul le mot cherché est envoyé, au moment de l'appui. Le HTML reçu n'est jamais inséré : on n'en lit que le texte.
@@ -2432,6 +2532,7 @@ $('mot').onclick = () => pause();
 $('modeLecture').onchange = e => { changerMode(e.target.value); e.target.blur(); };
 $('btnDico').onclick = e => { e.currentTarget.blur(); chercherDefinition(E.i); };
 $('btnVocab').onclick = e => { e.currentTarget.blur(); afficherVocabulaire(); };
+$('btnNotes').onclick = e => { e.currentTarget.blur(); afficherCarnet(); };
 $('btnRecherche').onclick = e => { e.currentTarget.blur(); ouvrirRecherche(); };
 $('btnMarque').onclick = e => { e.currentTarget.blur(); ajouterMarque(); };
 $('btnMarques').onclick = e => { e.currentTarget.blur(); afficherMarques(); };
@@ -2548,15 +2649,17 @@ document.addEventListener('keydown', e => {
   actions.b = actions.B = ajouterMarque;
   actions.s = actions.S = () => afficherSommaire(false);
   actions.g = actions.G = () => afficherSommaire(true);
-  if (E.source.type === 'test') for (const k of 'dDfFbBmMsSgG') delete actions[k];
+  actions.n = actions.N = afficherCarnet;
+  if (E.source.type === 'test') for (const k of 'dDfFbBmMsSgGnN') delete actions[k];
   if (actions[e.key]) { e.preventDefault(); if (e.target.blur) e.target.blur(); actions[e.key](); }
 });
 document.addEventListener('visibilitychange', () => {
+  if (document.hidden && E.carnetFlush) E.carnetFlush();
   if (document.hidden && E.L) { if (E.joue) pause(false); sauvegarder(true); terminerSession(); }
   if (document.hidden) odEnvoyerSiBesoin();
   else if (!$('accueil').classList.contains('cache') && od.connecte()) afficherOneDrive();   // retour dans l'appli : positions de l'ordinateur à jour
 });
-window.addEventListener('pagehide', () => { if (E.L) { sauvegarder(true); terminerSession(); } });
+window.addEventListener('pagehide', () => { if (E.carnetFlush) E.carnetFlush(); if (E.L) { sauvegarder(true); terminerSession(); } });
 
 // Accueil
 // Bouton « Importer » : fichier ou texte collé.
