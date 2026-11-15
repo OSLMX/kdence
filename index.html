@@ -88,11 +88,11 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 #avance { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--accent); width: 0; }
 
 #scene { position: relative; overflow: hidden; }
-/* Le pivot est dans la colonne centrale : son centre tombe exactement au milieu de l'écran. */
+/* Le mot est dans la colonne centrale : il est centré exactement au milieu de l'écran. */
 #mot { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
   --taille-mot: calc(clamp(2.4rem, 7vw, 4.6rem) * var(--echelle-mot, 1));
   font-family: var(--police-lecture); font-size: calc(var(--taille-mot) * var(--reduction, 1)); white-space: pre; user-select: none; cursor: pointer; }
-/* Colonnes latérales : le mot est collé au pivot ; les voisins débordent vers l'extérieur et sont coupés au bord. */
+/* Colonnes latérales : les voisins sont collés au mot et débordent vers l'extérieur, coupés au bord. */
 #mot { padding: 0 60px; }
 #mot .g, #mot .d { display: flex; min-width: 0; overflow: hidden; }
 #mot .g { justify-content: flex-end; } #mot .d { justify-content: flex-start; }
@@ -100,10 +100,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 #mot .voisin { opacity: var(--opacite-voisins, .3); }
 #mot .g.deborde { -webkit-mask-image: linear-gradient(to right, transparent, #000 40px); mask-image: linear-gradient(to right, transparent, #000 40px); }
 #mot .d.deborde { -webkit-mask-image: linear-gradient(to left, transparent, #000 40px); mask-image: linear-gradient(to left, transparent, #000 40px); }
-#mot.pivot .pv { color: var(--accent); }
-#mot.reperes::before, #mot.reperes::after { content: ""; position: absolute; left: 50%; width: 2px; margin-left: -1px; height: .28em;
-  font-size: var(--taille-mot); background: var(--doux); opacity: .7; }
-#mot.reperes::before { top: calc(50% - .95em); } #mot.reperes::after { top: calc(50% + .67em); }
+#mot .initiale { color: var(--accent); }   /* option « Première lettre en rouge » */
 #mot, #texte .page, #phrase, .question p, .marque-extrait { font-size-adjust: var(--hauteur-x); }
 #phrase { font-family: var(--police-lecture); }
 #phrase { position: absolute; left: 16px; right: 16px; top: calc(50% + 1.15 * clamp(2.4rem, 7vw, 4.6rem) * var(--echelle-mot, 1)); text-align: center;
@@ -195,11 +192,14 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 .bv-titre { font-family: var(--police-lecture); font-size: 1.75rem; line-height: 1.2; margin: 6px 0 4px; }
 .bv-texte { color: #c9c2b6; font-size: 1.05rem; line-height: 1.5; margin: 0 0 8px; }
 .bv-note { font-size: .92rem; min-height: 1.4em; margin: 0; }
+.bv-note-fin { font-size: .92rem; color: #8d8a84; margin: 6px 0 0; }
+.biblio-vide { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 36px 0 28px; }
+.biblio-vide img { width: 96px; height: 96px; }
 .bv-choix-liste { width: 100%; display: flex; flex-direction: column; gap: 12px; }
 #bienvenue button { font: inherit; cursor: pointer; }
 .bv-principal { width: 100%; min-height: 56px; border-radius: 14px; background: #f3ede2; color: #111; border: 0; font-size: 1.1rem; font-weight: 600; }
 .bv-secondaire { width: 100%; min-height: 56px; border-radius: 14px; background: #1d1d22; color: #f3ede2; border: 1px solid #3a3a42; font-size: 1.05rem; }
-.bv-choix { width: 100%; min-height: 76px; border-radius: 14px; background: #1d1d22; color: #f3ede2; border: 1px solid #3a3a42; text-align: left; padding: 14px 18px; }
+.bv-choix { width: 100%; min-height: 76px; border-radius: 14px; background: #1d1d22; color: #f3ede2; border: 1px solid #3a3a42; text-align: center; padding: 14px 18px; }
 .bv-choix b { display: block; font-size: 1.15rem; font-weight: 600; } .bv-choix small { display: block; color: #a7a196; font-size: .95rem; margin-top: 3px; }
 .bv-choix:active, .bv-secondaire:active { background: #2a2a31; }
 #bienvenue button:disabled { opacity: .35; cursor: default; }
@@ -238,7 +238,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
   #pages span { display: inline; margin-left: 6px; }
   #pages #restant { display: block; margin-left: 0; }
   .aide { display: none; }
-  /* Barre du bas en trois lignes nettes : lecture / vitesse / outils (la lettre pivot se règle dans Réglages). */
+  /* Barre du bas en trois lignes nettes : lecture / vitesse / outils . */
   #bas { gap: 8px; padding-top: 10px; }
   #bas > label { display: none; }
   #jouer { width: 58px; height: 58px; }
@@ -277,11 +277,10 @@ body { overscroll-behavior-y: none; }
 <!-- ======= Accueil / bibliothèque ======= -->
 <div id="accueil">
   <h1 class="marque"><img src="icones/icone-96.png" alt="" width="48" height="48">Kdence</h1>
-  <p class="sous" id="sousTitre">Un mot à la fois, à la vitesse que vous choisissez.</p>
 
   <div class="ligne" style="margin-bottom:18px">
     <button id="ouvrirStats">Statistiques</button>
-    <button id="ouvrirCalibrage">Test de calibrage</button>
+    <button id="ouvrirParametres">⚙ Paramètres</button>
   </div>
 
   <div class="entete-biblio">
@@ -290,7 +289,10 @@ body { overscroll-behavior-y: none; }
   </div>
   <input type="file" id="fichier" accept=".epub,.pdf,.docx,.txt,.md,.html,.htm" class="cache">
   <p id="message"></p>
-  <p class="note cache" id="biblioAucun">Aucun livre pour l'instant : touchez « Importer ».</p>
+  <div class="biblio-vide cache" id="biblioAucun">
+    <img src="icones/icone-192.png" alt="" width="96" height="96">
+    <button id="btnPremierLivre" class="btn-principal">Importez votre premier livre</button>
+  </div>
 
   <div class="carte cache" id="carteBiblio">
     <ul class="livres" id="listeBiblio"></ul>
@@ -308,13 +310,19 @@ body { overscroll-behavior-y: none; }
     <ul class="livres" id="listeRecents"></ul>
   </div>
 
+
+</div>
+
+<!-- ======= Paramètres ======= -->
+<div id="parametres" class="page cache">
+  <button class="retourAccueil">← Accueil</button>
+  <h1>Paramètres</h1>
   <div class="carte">
-    <h2>Réglages</h2>
+    <h2>Lecture</h2>
     <div class="reglage"><span>Vitesse par défaut (mots/min)</span>
       <input type="number" id="vitesseDefaut" min="20" max="2000" step="10" style="width:90px"></div>
     <div class="reglage"><span>Trouver la vitesse qui vous convient</span><button id="refaireTest">Refaire le test de vitesse</button></div>
-    <div class="reglage"><span>Lettre pivot en couleur</span><input type="checkbox" id="pivotDefaut"></div>
-    <div class="reglage"><span>Repères de fixation</span><input type="checkbox" id="reperes"></div>
+    <div class="reglage"><span>Première lettre en rouge</span><input type="checkbox" id="premiereLettre"></div>
     <div class="reglage"><span>Afficher la phrase en cours</span><input type="checkbox" id="phraseEnCours"></div>
     <div class="reglage"><span>Mots voisins en transparence</span><input type="checkbox" id="motsVoisins"></div>
     <div class="reglage"><span>Mots affichés à la fois<output id="v-motsParGroupe"></output></span><input type="range" id="motsParGroupe" min="1" max="5" step="1"></div>
@@ -335,8 +343,6 @@ body { overscroll-behavior-y: none; }
       <button id="theme">Automatique</button></div>
     <div class="cache" id="reglageOneDrive">
       <h2 style="margin-top:18px">Synchronisation OneDrive</h2>
-      <p class="note">Relie ce téléphone à la bibliothèque de l'ordinateur : mêmes livres, mêmes positions, mêmes marque-pages.
-        Kdence n'accède qu'à vos fichiers OneDrive, avec votre accord, et ne voit jamais votre mot de passe.</p>
       <p id="odReglageEtat" style="margin:8px 0"></p>
       <div class="ligne">
         <button id="odConnecter" class="btn-principal">Connecter OneDrive</button>
@@ -375,14 +381,6 @@ body { overscroll-behavior-y: none; }
   <div class="carte"><h2>Mots lus par jour (30 derniers jours)</h2><div id="histoJours"></div></div>
   <div class="carte"><h2>Débit réel moyen par semaine</h2><div id="tableSemaines"></div></div>
   <div class="carte"><h2>Temps passé par livre</h2><div id="tableLivres"></div></div>
-  <p class="note">Seul le temps de lecture active est compté (les pauses sont exclues). Statistiques enregistrées sur cet appareil.</p>
-</div>
-
-<!-- ======= Test de calibrage ======= -->
-<div id="calibrage" class="page cache">
-  <button class="retourAccueil">← Accueil</button>
-  <h1>Test de calibrage</h1>
-  <div id="calibrageCorps"></div>
 </div>
 
 <div id="pauseYeuxEcran" class="cache"><div><p id="pauseYeuxTexte"></p><p id="pauseYeuxCompte"></p><button id="pauseYeuxFermer" class="cache">Fermer</button></div></div>
@@ -412,7 +410,6 @@ body { overscroll-behavior-y: none; }
       <button id="plus" title="Plus vite (↑)">+</button>
       <small>mots/min<br><span id="reel"></span></small>
     </div>
-    <label><input type="checkbox" id="pivot"> Lettre pivot</label>
     <select id="modeLecture" title="Mode de lecture (M)"><option value="mot">Mot à mot</option><option value="guide">Défilement guidé</option></select>
     <button id="btnRecherche" class="outil" title="Rechercher dans le livre (F)" aria-label="Rechercher">🔍</button>
     <button id="btnMarque" class="outil" title="Ajouter un marque-page ici (B)" aria-label="Ajouter un marque-page">🔖</button>
@@ -450,6 +447,7 @@ body { overscroll-behavior-y: none; }
     <div class="bv-vitesse" id="bvVitesse" aria-live="polite"></div>
     <div class="bv-choix-liste" id="bvBoutons"></div>
     <p class="bv-texte bv-note" id="bvBorne"></p>
+    <p class="bv-texte bv-note-fin">Vous pourrez modifier ce réglage plus tard dans les Paramètres.</p>
   </div>
 </div>
 
@@ -479,7 +477,8 @@ const DICO_CACHE_MAX = 500, DICO_DEFINITIONS_MAX = 5;
 const DEFAUTS = {
   vitesse: 300,          // vitesse du livre en cours de lecture
   vitesseDefaut: null,   // vitesse de toute nouvelle lecture (test de l'accueil, Réglages) ; reprend « vitesse » si absente
-  pivot: true, theme: 'auto',
+  premiereLettre: false, // première lettre du mot en rouge
+  theme: 'auto',
   tailleMot: 100,        // % de la taille d'origine du mot en lecture
   tailleTexte: 1.12,     // rem, texte complet en pause
   avertiVeille: false,
@@ -489,7 +488,6 @@ const DEFAUTS = {
   debitReel: false,      // la vitesse réglée devient le débit moyen réel du livre
   demarrage: 8,          // mots de démarrage progressif (0 = désactivé)
   reculReprise: 5,       // mots relus à la reprise après une pause
-  reperes: true,         // traits de fixation au-dessus et au-dessous du pivot
   phraseEnCours: false,  // phrase en cours en petit sous le mot
   motsVoisins: true,     // 2 mots avant et 2 mots après, en transparence, de part et d'autre du mot
   motsParGroupe: 1,      // mots affichés à la fois (1 à 5)
@@ -504,7 +502,6 @@ const DEFAUTS = {
 };
 const PAUSE_YEUX_S = 20;
 const RECHERCHE_MAX = 100;
-const CAL_VITESSES = [250, 350, 450, 550, 700], CAL_SEUIL = 5;  // test de calibrage : vitesse conseillée = score >= 5/6
 
 const $ = id => document.getElementById(id);
 
@@ -513,7 +510,7 @@ const prefs = Object.assign({}, DEFAUTS, lireLocal('lc:prefs') || {});
 if (prefs.vitesseDefaut == null) prefs.vitesseDefaut = prefs.vitesse;
 function lireLocal(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
 function ecrireLocal(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} }
-// Pendant un test (accueil, calibrage), certains réglages sont remplacés pour un temps : on enregistre les vrais.
+// Pendant le test de vitesse, certains réglages sont remplacés pour un temps : on enregistre les vrais.
 let prefsMasquees = null;
 function sauverPrefs() { ecrireLocal('lc:prefs', prefsMasquees ? { ...prefs, ...prefsMasquees } : prefs); }
 function appliquerTailles() {
@@ -613,9 +610,6 @@ async function detecterMode() {
   }
   $('carteBiblio').classList.toggle('cache', !modeBiblio);
   $('reglageDossier').classList.toggle('cache', !modeBiblio);
-  $('sousTitre').textContent = modeBiblio
-    ? 'Un mot à la fois, à la vitesse que vous choisissez. Votre position est retenue dans la bibliothèque.'
-    : 'Version portable : rien n\'est envoyé nulle part, la position est retenue sur cet appareil.';
 }
 
 function formatTaille(n) { return n > 1e6 ? (n / 1e6).toFixed(1) + ' Mo' : Math.round(n / 1e3) + ' ko'; }
@@ -649,17 +643,18 @@ window.addEventListener('popstate', () => {
   if (panneauOuvert()) fermerPanneau();
   else if (!$('pauseYeuxEcran').classList.contains('cache')) $('pauseYeuxEcran').classList.add('cache');
   else if (!$('lecteur').classList.contains('cache')) $('retour').click();
-  else if ($('accueil').classList.contains('cache')) { restaurerPrefsTest(); afficherAccueil(); }
+  else if ($('accueil').classList.contains('cache')) afficherAccueil();
   if (!aLaBase()) reserverRetour();
 });
 function montrerPage(id) {
-  for (const p of ['accueil', 'lecteur', 'stats', 'calibrage']) $(p).classList.toggle('cache', p !== id);
+  for (const p of ['accueil', 'lecteur', 'stats', 'parametres']) $(p).classList.toggle('cache', p !== id);
   if (id !== 'accueil') reserverRetour();
   scrollTo(0, 0);
 }
 async function afficherAccueil() {
   montrerPage('accueil');
   document.title = 'Kdence';
+  let vide = false;
   if (modeBiblio) {
     const ul = $('listeBiblio'); ul.innerHTML = '';
     try {
@@ -667,7 +662,9 @@ async function afficherAccueil() {
       progressions = progression;
       livres.sort((a, b) => ((progression[b.nom] || {}).maj || '').localeCompare((progression[a.nom] || {}).maj || '') || a.nom.localeCompare(b.nom));
       for (const l of livres) ul.appendChild(ligneLivre(l.nom, progression[l.nom], formatTaille(l.taille), () => ouvrirDepuisBiblio(l.nom)));
-      $('biblioVide').textContent = livres.length ? '' : 'Aucun livre dans le dossier pour l\'instant. Déposez-en un ci-dessus ou copiez-le dans le dossier.';
+      $('biblioVide').textContent = '';
+      $('carteBiblio').classList.toggle('cache', !livres.length);
+      vide = !livres.length;
     } catch (e) { $('biblioVide').textContent = 'Impossible de lire le dossier : ' + e.message; }
   }
   if (!modeBiblio) afficherOneDrive();
@@ -676,7 +673,8 @@ async function afficherAccueil() {
   $('carteRecents').classList.toggle('cache', !recents.length);
   const ul = $('listeRecents'); ul.innerHTML = '';
   for (const p of recents) ul.appendChild(ligneLivre(p.fichier || '', p, '', () => rouvrirLocal(p), () => retirerLocal(p)));
-  $('biblioAucun').classList.toggle('cache', modeBiblio || recents.length > 0 || od.connecte());
+  if (!modeBiblio) vide = !recents.length && !(od.connecte() && od.liste.length);
+  $('biblioAucun').classList.toggle('cache', !vide);
 }
 
 async function rouvrirLocal(p) {
@@ -1044,7 +1042,7 @@ function ouvrirCollage(texteInitial = '', titreInitial = '') {
 function ouvrirPageWeb(adresseInitiale = '') {
   const f = document.createDocumentFragment();
   const champ = el('input'); champ.type = 'url'; champ.className = 'champ'; champ.placeholder = 'https://…'; champ.value = adresseInitiale;
-  const info = el('p', modeBiblio ? '' : 'Astuce : sur le téléphone, le plus simple est « Partager » → Kdence depuis le navigateur.', 'note');
+  const info = el('p', '', 'note');
   const ok = el('button', 'Lire la page', 'btn-principal');
   const lancer = async () => {
     if (!champ.value.trim()) return;
@@ -1333,7 +1331,6 @@ function demarrerLecteur(L, source, nom, prog) {
   E.mode = prog && prog.mode === 'guide' ? 'guide' : 'mot';
   $('modeLecture').value = E.mode;
   $('vitesse').value = prefs.vitesse;
-  $('pivot').checked = prefs.pivot;
   montrerPage('lecteur');
   document.title = L.titre + ' — Kdence';
   pause();
@@ -1360,13 +1357,6 @@ function majEntete() {
   if ($('restant').textContent !== t2) $('restant').textContent = t2;
 }
 
-// La lettre pivot est la lettre centrale du mot (lettres et chiffres seulement) ;
-// pour un nombre pair de lettres, c'est la première des deux lettres centrales.
-function indicePivot(caracteres) {
-  const lettres = [];
-  caracteres.forEach((c, k) => { if (/[\p{L}\p{N}]/u.test(c)) lettres.push(k); });
-  return lettres.length ? lettres[Math.ceil(lettres.length / 2) - 1] : 0;
-}
 // Groupe affiché à partir du mot i (fin exclue) : jusqu'à prefs.motsParGroupe mots, sans sortir du paragraphe,
 // sans couper un mot composé, et (option) en s'arrêtant après une virgule ou un point.
 function finGroupe(L, i) {
@@ -1391,22 +1381,22 @@ function afficherMot() {
   E.finGroupe = finGroupe(E.L, E.i);
   if (E.mode === 'guide') return surlignerCourant();
   const m = texteGroupe(E.L, E.i, E.finGroupe);
-  const el = $('mot'), [g, pv, d] = el.children;
+  const zone = $('mot'), [g, pv, d] = zone.children;
   const [avant, gm] = g.children, [dm, apres] = d.children;
-  const car = [...m], p = indicePivot(car);
-  gm.textContent = car.slice(0, p).join('');
-  pv.textContent = car[p] || '';
-  dm.textContent = car.slice(p + 1).join('');
+  // Le mot (ou le groupe) est centré ; option : sa première lettre en rouge.
+  gm.textContent = ''; dm.textContent = '';
+  const car = [...m], k = car.findIndex(c => /[\p{L}\p{N}]/u.test(c));
+  if (prefs.premiereLettre && k >= 0) pv.replaceChildren(car.slice(0, k).join(''), el('span', car[k], 'initiale'), car.slice(k + 1).join(''));
+  else pv.textContent = m;
   const v = prefs.motsVoisins ? motsVoisins(E.L, E.i, E.finGroupe) : { avant: '', apres: '' };
   avant.textContent = v.avant; apres.textContent = v.apres;
-  el.classList.toggle('pivot', prefs.pivot);
-  el.classList.toggle('reperes', prefs.reperes);
-  // Mots longs : on réduit la police pour que la plus longue moitié du mot (sans les voisins) tienne dans 46 % de la largeur.
+
+  // Mots longs : on réduit la police pour que le mot (sans les voisins) tienne dans 92 % de la largeur.
   // Sur écran étroit, la limite laisse aussi la place du bouton dictionnaire (bord droit).
-  el.style.setProperty('--reduction', 1);
+  zone.style.setProperty('--reduction', 1);
   const demi = Math.max(gm.offsetWidth, dm.offsetWidth) + pv.offsetWidth / 2;
-  const limite = Math.min(el.clientWidth * 0.46, el.clientWidth / 2 - MARGE_BOUTON_DICO);
-  if (demi > limite) el.style.setProperty('--reduction', limite / demi);
+  const limite = Math.min(zone.clientWidth * 0.46, zone.clientWidth / 2 - MARGE_BOUTON_DICO);
+  if (demi > limite) zone.style.setProperty('--reduction', limite / demi);
   // Voisin coupé au bord : fondu plutôt que coupure nette.
   g.classList.toggle('deborde', avant.offsetWidth + gm.offsetWidth > g.clientWidth + 1);
   d.classList.toggle('deborde', dm.offsetWidth + apres.offsetWidth > d.clientWidth + 1);
@@ -2008,107 +1998,6 @@ function pauseYeux() {
   }, 1000);
 }
 
-// ---------- Test de calibrage ----------
-// Chaque extrait est lu à une vitesse différente (débit réel), puis 6 questions à trous mesurent la mémoire immédiate du texte.
-const CAL = { donnees: null, ordre: null, k: 0, scores: {}, prefs: null };
-async function afficherCalibrage() {
-  montrerPage('calibrage');
-  const c = $('calibrageCorps'); c.replaceChildren();
-  c.append(
-    el('p', 'Vous allez lire 5 courts extraits (environ 200 mots), chacun à une vitesse différente : 250, 350, 450, 550 et 700 mots par minute en débit réel, dans un ordre mélangé. Après chaque extrait, 6 questions à trous vérifient ce que vous avez retenu.'),
-    el('p', 'Ce test mesure la mémoire immédiate du texte, pas la compréhension profonde : le résultat est indicatif. Il fonctionne sans connexion.', 'note'));
-  const go = el('button', 'Commencer le test', 'btn-principal'); go.onclick = demarrerCalibrage;
-  c.append(go);
-  const hist = lireLocal('lc:calibrages') || [];
-  if (hist.length) {
-    c.append(el('h2', 'Tests précédents'));
-    c.append(tableau(['Date', ...CAL_VITESSES.map(v => v + ''), 'Conseil'], hist.slice().reverse().map(h =>
-      [new Date(h.date).toLocaleDateString('fr-FR'), ...CAL_VITESSES.map(v => h.scores[v] + '/6'), h.conseil ? h.conseil + ' mots/min' : '< 250']), ''));
-  }
-}
-async function demarrerCalibrage() {
-  try { CAL.donnees = CAL.donnees || await chargerDonnees('calibrage.json'); }
-  catch (e) { alert('Données du test introuvables : ' + e.message); return; }
-  CAL.ordre = CAL_VITESSES.slice().sort(() => Math.random() - 0.5);
-  CAL.k = 0; CAL.scores = {};
-  annoncerExtrait();
-}
-function annoncerExtrait() {
-  montrerPage('calibrage');
-  const t = CAL.donnees.textes[CAL.k], c = $('calibrageCorps');
-  c.replaceChildren(el('h2', `Extrait ${CAL.k + 1} sur 5`), el('p', `${t.auteur}, ${t.titre}.`, 'note'),
-    el('p', 'Lisez attentivement : les questions viennent juste après. Vous pouvez mettre en pause avec Espace.'));
-  const go = el('button', 'Lire l\'extrait', 'btn-principal'); go.onclick = lireExtrait; c.append(go);
-}
-function lireExtrait() {
-  const t = CAL.donnees.textes[CAL.k], L = nouveauLivre();
-  L.titre = `Test de calibrage — extrait ${CAL.k + 1} / 5`;
-  for (const p of t.texte.split('\n')) ajouterPara(L, p);
-  preparer(L);
-  // Réglages du test (non enregistrés) : vitesse en débit réel, sans retour en arrière.
-  CAL.prefs = prefsMasquees = { vitesse: prefs.vitesse, debitReel: prefs.debitReel, reculReprise: prefs.reculReprise, pauseYeux: prefs.pauseYeux };
-  Object.assign(prefs, { vitesse: CAL.ordre[CAL.k], debitReel: true, reculReprise: 0, pauseYeux: false });
-  demarrerLecteur(L, { type: 'test', cle: 'test' }, 'test', null);
-  E.mode = 'mot';
-  E.surFin = () => { restaurerPrefsTest(); poserQuestions(); };
-  setTimeout(() => { if (E.L === L && !E.joue) jouer(); }, 800);
-}
-function restaurerPrefsTest() { if (CAL.prefs) { Object.assign(prefs, CAL.prefs); CAL.prefs = prefsMasquees = null; $('vitesse').value = prefs.vitesse; } }
-function abandonnerCalibrage() { restaurerPrefsTest(); $('lecteur').classList.remove('test'); afficherCalibrage(); }
-function poserQuestions() {
-  E.L = null; $('lecteur').classList.remove('test');
-  montrerPage('calibrage');
-  const c = $('calibrageCorps'), qs = CAL.donnees.questions[CAL.k];
-  c.replaceChildren(el('h2', `Extrait ${CAL.k + 1} sur 5 : questions`), el('p', 'Choisissez le mot qui était dans le texte.', 'note'));
-  const form = el('form');
-  qs.forEach((q, n) => {
-    const d = el('div', null, 'question');
-    d.append(el('p', (n + 1) + '. ' + q.phrase));
-    for (const choix of [q.reponse, ...q.leurres].sort(() => Math.random() - 0.5)) {
-      const lab = el('label'), r = el('input'); r.type = 'radio'; r.name = 'q' + n; r.value = choix; r.required = true;
-      lab.append(r, choix); d.append(lab);
-    }
-    form.append(d);
-  });
-  const ok = el('button', 'Valider', 'btn-principal'); ok.type = 'submit'; form.append(ok);
-  form.onsubmit = e => {
-    e.preventDefault();
-    CAL.scores[CAL.ordre[CAL.k]] = qs.filter((q, n) => (form.elements['q' + n].value || '') === q.reponse).length;
-    CAL.k++;
-    if (CAL.k < 5) annoncerExtrait(); else resultatsCalibrage();
-  };
-  c.append(form);
-}
-function resultatsCalibrage() {
-  const reussies = CAL_VITESSES.filter(v => CAL.scores[v] >= CAL_SEUIL);
-  const conseil = reussies.length ? Math.max(...reussies) : null;
-  const hist = lireLocal('lc:calibrages') || [];
-  hist.push({ date: new Date().toISOString(), scores: { ...CAL.scores }, conseil });
-  ecrireLocal('lc:calibrages', hist);
-  const c = $('calibrageCorps');
-  c.replaceChildren(el('h2', 'Résultat'));
-  // Courbe du score selon la vitesse
-  const W = 560, H = 220, G = 36, B = 28, T = 10, x = v => G + 20 + (v - 250) / 450 * (W - G - 40), y = s => H - B - s / 6 * (H - B - T);
-  const g = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'graphe', role: 'img', 'aria-label': 'Score selon la vitesse' });
-  for (const s of [0, 2, 4, 6]) { svg('line', { x1: G, x2: W, y1: y(s), y2: y(s), class: 'grille' }, g); svg('text', { x: G - 6, y: y(s) + 4, 'text-anchor': 'end' }, g).textContent = s; }
-  svg('line', { x1: G, x2: W, y1: y(CAL_SEUIL), y2: y(CAL_SEUIL), stroke: 'var(--doux)', 'stroke-dasharray': '4 4' }, g);
-  svg('text', { x: W - 2, y: y(CAL_SEUIL) - 5, 'text-anchor': 'end' }, g).textContent = 'seuil 5/6';
-  svg('polyline', { points: CAL_VITESSES.map(v => x(v) + ',' + y(CAL.scores[v])).join(' '), fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2 }, g);
-  for (const v of CAL_VITESSES) {
-    svg('title', {}, svg('circle', { cx: x(v), cy: y(CAL.scores[v]), r: 5, fill: 'var(--accent)', stroke: 'var(--fond)', 'stroke-width': 2 }, g)).textContent = `${v} mots/min : ${CAL.scores[v]}/6`;
-    svg('text', { x: x(v), y: H - 8, 'text-anchor': 'middle' }, g).textContent = v;
-  }
-  c.append(g, tableau(['Vitesse (débit réel)', 'Score'], CAL_VITESSES.map(v => [v + ' mots/min', CAL.scores[v] + ' / 6']), ''));
-  c.append(el('p', conseil ? `Vitesse conseillée : ${conseil} mots/min (la plus haute où vous gardez au moins 5 réponses sur 6).` : 'Votre score descend sous 5/6 dès 250 mots/min : restez en dessous de 250 mots/min pour le moment.'));
-  c.append(el('p', 'Rappel : ce test mesure la mémoire immédiate du texte, pas la compréhension profonde. Le résultat est indicatif.', 'note'));
-  if (conseil) {
-    const b = el('button', `Utiliser ${conseil} mots/min en débit réel`, 'btn-principal');
-    b.onclick = () => { prefs.debitReel = true; $('debitReel').checked = true; changerVitesse(conseil); changerVitesseDefaut(conseil); afficherToast('Vitesse réglée sur ' + conseil + ' mots/min (débit réel).'); };
-    c.append(b);
-  }
-  const autre = el('button', 'Retour au test'); autre.style.marginLeft = '8px'; autre.onclick = afficherCalibrage; c.append(autre);
-}
-
 // ---------- Synchronisation OneDrive (téléphone) ----------
 // Le téléphone lit et écrit le même dossier Bibliotheque que l'ordinateur, dans OneDrive (Microsoft Graph).
 // Connexion « PKCE » : Kdence ne voit jamais le mot de passe, seulement une autorisation limitée aux fichiers.
@@ -2515,7 +2404,6 @@ $('vitesse').onchange = e => changerVitesse(+e.target.value);
 $('vitesse').onkeydown = e => { if (e.key === 'Enter') { changerVitesse(+e.target.value); e.target.blur(); } };
 $('moins').onclick = () => changerVitesse(prefs.vitesse - 10);
 $('plus').onclick = () => changerVitesse(prefs.vitesse + 10);
-$('pivot').onchange = e => { prefs.pivot = e.target.checked; $('pivotDefaut').checked = prefs.pivot; sauverPrefs(); if (E.joue) afficherMot(); e.target.blur(); };
 $('jouer').onclick = e => { basculer(); e.currentTarget.blur(); };
 $('mot').onclick = () => pause();
 $('modeLecture').onchange = e => { changerMode(e.target.value); e.target.blur(); };
@@ -2524,14 +2412,15 @@ $('btnVocab').onclick = e => { e.currentTarget.blur(); afficherVocabulaire(); };
 $('btnRecherche').onclick = e => { e.currentTarget.blur(); ouvrirRecherche(); };
 $('btnMarque').onclick = e => { e.currentTarget.blur(); ajouterMarque(); };
 $('btnMarques').onclick = e => { e.currentTarget.blur(); afficherMarques(); };
-// Titre du chapitre → sommaire ; numéro de page → aller à une page (pas pendant le test de calibrage).
+// Titre du chapitre → sommaire ; numéro de page → aller à une page (pas pendant le test de vitesse).
 $('chapitre').onclick = () => { if (E.L && E.source.type !== 'test') afficherSommaire(false); };
 $('pages').onclick = () => { if (E.L && E.source.type !== 'test') afficherSommaire(true); };
 $('chapitre').title = 'Sommaire (S)'; $('pages').title = 'Aller à une page (G)';
 $('pauseYeuxFermer').onclick = () => $('pauseYeuxEcran').classList.add('cache');
 $('ouvrirStats').onclick = afficherStats;
-$('ouvrirCalibrage').onclick = afficherCalibrage;
-document.querySelectorAll('.retourAccueil').forEach(b => b.onclick = () => { restaurerPrefsTest(); afficherAccueil(); });
+$('ouvrirParametres').onclick = () => montrerPage('parametres');
+$('btnPremierLivre').onclick = () => ouvrirImport();
+document.querySelectorAll('.retourAccueil').forEach(b => b.onclick = () => afficherAccueil());
 $('objectif').onchange = e => { prefs.objectif = Math.max(0, Math.round(+e.target.value) || 0); e.target.value = prefs.objectif; sauverPrefs(); afficherStats(); };
 $('panneauFermer').onclick = fermerPanneau;
 $('voile').onclick = fermerPanneau;
@@ -2561,9 +2450,8 @@ $('phraseSuiv').onclick = phraseSuiv;
 $('retour').onclick = () => {
   if (E.bvTest) { pause(false); libererEcran(); bvQuitterLecture(); $('bienvenue').classList.remove('cache'); bvEtape('bvProfil'); return; }
   pause(); libererEcran(); terminerSession();
-  const test = E.source && E.source.type === 'test';
   E.L = null;
-  if (test) abandonnerCalibrage(); else afficherAccueil();
+  afficherAccueil();
 };
 $('pageTexte').onclick = e => {
   const s = e.target.closest('span[data-i]');
@@ -2649,12 +2537,12 @@ window.addEventListener('pagehide', () => { if (E.L) { sauvegarder(true); termin
 // Accueil
 // Bouton « Importer » : fichier, texte collé ou page web.
 function ouvrirImport() {
-  const choix = (titre, detail, action) => { const b = el('button', null, 'choix-import'); b.append(el('b', titre), el('small', detail)); b.onclick = action; return b; };
+  const choix = (titre, action) => { const b = el('button', null, 'choix-import'); b.append(el('b', titre)); b.onclick = action; return b; };
   const f = document.createDocumentFragment();
   f.append(
-    choix('Ouvrir un fichier', 'EPUB, PDF, Word .docx, TXT, HTML', () => { fermerPanneau(); $('fichier').click(); }),
-    choix('Coller un texte', 'Un courriel, une note, un message…', () => ouvrirCollage()),
-    choix('Lire une page web', modeBiblio ? 'Un article, à partir de son adresse' : 'Wikipédia, Wikisource… (ailleurs : Partager → Kdence)', () => ouvrirPageWeb()));
+    choix('Ouvrir un fichier', () => { fermerPanneau(); $('fichier').click(); }),
+    choix('Coller un texte', () => ouvrirCollage()),
+    choix('Lire une page web', () => ouvrirPageWeb()));
   ouvrirPanneau('Importer', f);
 }
 $('btnImporter').onclick = ouvrirImport;
@@ -2675,7 +2563,6 @@ function changerVitesseDefaut(v) {
   sauverPrefs();
 }
 $('vitesseDefaut').onchange = e => changerVitesseDefaut(+e.target.value);
-$('pivotDefaut').onchange = e => { prefs.pivot = e.target.checked; sauverPrefs(); };
 $('theme').onclick = () => { prefs.theme = { auto: 'light', light: 'dark', dark: 'auto' }[prefs.theme]; sauverPrefs(); appliquerTheme(); };
 $('enregistrerDossier').onclick = async () => {
   try {
@@ -2687,7 +2574,6 @@ $('enregistrerDossier').onclick = async () => {
 
 (async () => {
   $('vitesseDefaut').value = prefs.vitesseDefaut;
-  $('pivotDefaut').checked = prefs.pivot;
   lierReglage('tailleMot', v => v + ' %', appliquerTailles);
   lierReglage('tailleTexte', v => v.toFixed(2).replace('.', ',') + ' rem', appliquerTailles);
   const ms = v => v + ' ms', mots = v => v ? v + ' mot' + (v > 1 ? 's' : '') : 'désactivé';
@@ -2696,7 +2582,7 @@ $('enregistrerDossier').onclick = async () => {
   lierReglage('pauseParagraphe', ms, rafraichir);
   lierReglage('rythmeFrequence', null, () => { if (E.L) { preparerRythme(E.L); majEntete(); } });
   lierReglage('debitReel', null, rafraichir);
-  lierReglage('reperes', null, () => { if (E.joue) afficherMot(); });
+  lierReglage('premiereLettre', null, () => { if (E.joue) afficherMot(); });
   lierReglage('phraseEnCours', null, () => { if (E.joue) afficherMot(); });
   lierReglage('motsVoisins', null, () => { if (E.joue) afficherMot(); });
   lierReglage('motsParGroupe', v => v + (v > 1 ? ' mots' : ' mot'), () => { if (E.joue) afficherMot(); });
