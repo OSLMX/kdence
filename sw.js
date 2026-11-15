@@ -1,5 +1,5 @@
 // Service worker : garde l'application en cache pour l'utiliser hors ligne.
-const CACHE = 'kdence-86bc75c4d5';
+const CACHE = 'kdence-ae3063ea6a';
 const FICHIERS = ["./","index.html","manifest.webmanifest","lib/eb-garamond-400-italique.woff2","lib/eb-garamond-400.woff2","lib/eb-garamond-600.woff2","lib/frequences.json","lib/jszip.min.js","lib/mammoth.browser.min.js","lib/pdf.min.js","lib/pdf.worker.min.js","icones/icone-192.png","icones/icone-512.png","icones/icone-96.png","icones/icone-adaptative-512.png"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)).then(() => self.skipWaiting()));

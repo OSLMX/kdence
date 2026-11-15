@@ -84,7 +84,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 #pages b { font-size: 1.15rem; font-weight: 600; }
 #pages span { display: block; color: var(--doux); font-size: .8rem; }
 #pages #restant { font-size: .72rem; white-space: nowrap; }
-#reel { font-size: .75rem; }
+
 #avance { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--accent); width: 0; }
 
 #scene { position: relative; overflow: hidden; }
@@ -296,7 +296,7 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
   #pages b { font-size: .95rem; } #pages #restant { display: none; }
   #bas { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); justify-content: flex-start; }
   #bas > * { flex: none; }
-  #bas > label, .aide, #reel { display: none; }
+  #bas > label, .aide { display: none; }
   #jouer { width: 44px; height: 44px; font-size: 1.2rem; }
   .vitesse { flex-basis: auto; }
 }
@@ -445,7 +445,6 @@ body { overscroll-behavior-y: none; }
       <button id="moins" title="Moins vite (↓)">−</button>
       <input type="number" id="vitesse" min="20" max="2000" step="10" inputmode="numeric" enterkeyhint="done">
       <button id="plus" title="Plus vite (↑)">+</button>
-      <small>mots/min<br><span id="reel"></span></small>
     </div>
     <select id="modeLecture" title="Mode de lecture (M)"><option value="mot">Mot à mot</option><option value="guide">Défilement guidé</option></select>
     <button id="btnRecherche" class="outil" title="Rechercher dans le livre (F)" aria-label="Rechercher">🔍</button>
@@ -1365,12 +1364,10 @@ function majEntete() {
   const encart = !!(L.premierChapitre && i < L.premierChapitre.debut);
   $('sauterDebut').classList.toggle('cache', !encart);
   $('scene').classList.toggle('avec-encart', encart);
-  // Débit réel du chapitre et temps restants (chapitre, livre)
+  // Temps restants (chapitre, livre)
   const n = L.mots.length;
-  const a = k >= 0 ? L.chapitres[k].debut : 0, b = k + 1 < L.chapitres.length ? L.chapitres[k + 1].debut : n;
-  const reel = b > a ? Math.round((b - a) / totalMs(L, a, b) * 60000) : prefs.vitesse;
-  const t1 = 'réel ≈ ' + reel, t2 = `chap. ${formatDuree(totalMs(L, i, b))} · livre ${formatDuree(totalMs(L, i, n))}`;
-  if ($('reel').textContent !== t1) $('reel').textContent = t1;
+  const b = k + 1 < L.chapitres.length ? L.chapitres[k + 1].debut : n;
+  const t2 = `chap. ${formatDuree(totalMs(L, i, b))} · livre ${formatDuree(totalMs(L, i, n))}`;
   if ($('restant').textContent !== t2) $('restant').textContent = t2;
 }
 
