@@ -186,6 +186,45 @@ textarea.champ { resize: vertical; min-height: 180px; line-height: 1.45; }
 .marque-note { width: 100%; padding: .35em .5em; border: 1px solid var(--trait); border-radius: 6px; background: var(--fond2); }
 #champRecherche { width: 100%; padding: .5em .6em; border: 1px solid var(--trait); border-radius: 8px; background: var(--fond2); font-size: 1rem; }
 
+/* Accueil du premier lancement : fond noir, gros boutons au pouce */
+#bienvenue { position: fixed; inset: 0; z-index: 60; background: #000; color: #f3ede2; display: flex; align-items: center; justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); overflow-y: auto; }
+.bv-etape { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; margin: auto; }
+.bv-logo { width: 112px; height: 112px; }
+.bv-nom { font-family: var(--police-lecture); font-size: 2.6rem; line-height: 1; margin-bottom: 10px; }
+.bv-titre { font-family: var(--police-lecture); font-size: 1.75rem; line-height: 1.2; margin: 6px 0 4px; }
+.bv-texte { color: #c9c2b6; font-size: 1.05rem; line-height: 1.5; margin: 0 0 8px; }
+.bv-note { font-size: .92rem; min-height: 1.4em; margin: 0; }
+.bv-choix-liste { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+#bienvenue button { font: inherit; cursor: pointer; }
+.bv-principal { width: 100%; min-height: 56px; border-radius: 14px; background: #f3ede2; color: #111; border: 0; font-size: 1.1rem; font-weight: 600; }
+.bv-secondaire { width: 100%; min-height: 56px; border-radius: 14px; background: #1d1d22; color: #f3ede2; border: 1px solid #3a3a42; font-size: 1.05rem; }
+.bv-choix { width: 100%; min-height: 76px; border-radius: 14px; background: #1d1d22; color: #f3ede2; border: 1px solid #3a3a42; text-align: left; padding: 14px 18px; }
+.bv-choix b { display: block; font-size: 1.15rem; font-weight: 600; } .bv-choix small { display: block; color: #a7a196; font-size: .95rem; margin-top: 3px; }
+.bv-choix:active, .bv-secondaire:active { background: #2a2a31; }
+#bienvenue button:disabled { opacity: .35; cursor: default; }
+.bv-lien { background: none; border: 0; color: #8d8a84; text-decoration: underline; min-height: 44px; padding: 8px 16px; font-size: .95rem; }
+.bv-chiffre { font-family: var(--police-lecture); font-size: 6rem; line-height: 1; }
+.bv-vitesse { font-family: var(--police-lecture); font-size: 2.2rem; margin: 4px 0 10px; }
+/* Fondus : écran noir, puis logo et nom (~1,5 s), puis le message de bienvenue, puis le texte et le bouton */
+@keyframes bvFondu { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+#bvOuverture.anime .bv-logo, #bvOuverture.anime .bv-nom { animation: bvFondu var(--bv-d1, 1.5s) ease .4s both; }
+#bvOuverture.anime .bv-f2 { animation: bvFondu 1s ease var(--bv-t2, 2.1s) both; }
+#bvOuverture.anime .bv-f3 { animation: bvFondu 1s ease var(--bv-t3, 3.1s) both; }
+.bv-etape.entree { animation: bvFondu .35s ease both; }
+.bv-chiffre.bat { animation: bvFondu .6s ease both; }
+/* Mouvements réduits (réglage du téléphone) : pas de fondus */
+@media (prefers-reduced-motion: reduce) { #bienvenue *, #bienvenue .bv-etape { animation: none !important; } }
+.mouvement-reduit #bienvenue *, .mouvement-reduit #bienvenue .bv-etape { animation: none !important; }
+/* Lecture du test : même moteur que le lecteur, sur fond noir, sans les commandes */
+#lecteur.accueil { --fond: #000; --fond2: #141418; --texte: #f3ede2; --doux: #8d8a84; --trait: #2a2a30; --accent: #ff6b5b; --bouton: #f3ede2; --bouton-texte: #000;
+  background: #000; color: var(--texte); }
+#lecteur.accueil #haut, #lecteur.accueil #btnDico { display: none !important; }
+#lecteur.accueil #bas { border-top: 0; }
+/* Rangées fixes : masquer l'en-tête ne doit pas faire glisser la zone du mot dans une rangée vide */
+#haut { grid-row: 1; } #scene { grid-row: 2; } #bas { grid-row: 3; }
+#lecteur.accueil #bas > :not(#jouer) { display: none !important; }
+
 #toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); max-width: min(92vw, 520px); background: var(--bouton); color: var(--bouton-texte);
   padding: 10px 16px; border-radius: 10px; font-size: .92rem; text-align: center; z-index: 50; box-shadow: 0 4px 18px rgba(0,0,0,.25); pointer-events: none; }
 .livres .retirer { flex: none; font-size: .8rem; padding: .25em .6em; }
@@ -273,6 +312,7 @@ body { overscroll-behavior-y: none; }
     <h2>Réglages</h2>
     <div class="reglage"><span>Vitesse par défaut (mots/min)</span>
       <input type="number" id="vitesseDefaut" min="20" max="2000" step="10" style="width:90px"></div>
+    <div class="reglage"><span>Trouver la vitesse qui vous convient</span><button id="refaireTest">Refaire le test de vitesse</button></div>
     <div class="reglage"><span>Lettre pivot en couleur</span><input type="checkbox" id="pivotDefaut"></div>
     <div class="reglage"><span>Repères de fixation</span><input type="checkbox" id="reperes"></div>
     <div class="reglage"><span>Afficher la phrase en cours</span><input type="checkbox" id="phraseEnCours"></div>
@@ -387,6 +427,32 @@ body { overscroll-behavior-y: none; }
   <div id="panneauCorps"></div>
 </aside>
 
+<!-- ======= Accueil du premier lancement : test de vitesse ======= -->
+<div id="bienvenue" class="cache" role="dialog" aria-modal="true" aria-label="Bienvenue sur Kdence">
+  <div class="bv-etape" id="bvOuverture">
+    <img class="bv-logo" src="icones/icone-512.png" alt="">
+    <div class="bv-nom">Kdence</div>
+    <p class="bv-titre bv-f2">Bienvenue sur Kdence</p>
+    <p class="bv-texte bv-f3">Nous allons déterminer votre vitesse de lecture grâce à un court test.</p>
+    <button class="bv-principal bv-f3" id="bvCommencer">Commencer</button>
+    <button class="bv-lien bv-f3" id="bvPasser">Passer</button>
+  </div>
+  <div class="bv-etape cache" id="bvProfil">
+    <p class="bv-titre">Quel lecteur êtes-vous ?</p>
+    <div class="bv-choix-liste" id="bvProfils"></div>
+  </div>
+  <div class="bv-etape cache" id="bvDecompte">
+    <p class="bv-texte">Lisez ce texte à votre rythme habituel.</p>
+    <div class="bv-chiffre" id="bvChiffre" aria-live="assertive">3</div>
+  </div>
+  <div class="bv-etape cache" id="bvValidation">
+    <p class="bv-titre">Cette vitesse vous convient‑elle ?</p>
+    <div class="bv-vitesse" id="bvVitesse" aria-live="polite"></div>
+    <div class="bv-choix-liste" id="bvBoutons"></div>
+    <p class="bv-texte bv-note" id="bvBorne"></p>
+  </div>
+</div>
+
 <div id="chargement" class="cache">Analyse du livre…</div>
 <div id="toast" class="cache"></div>
 
@@ -411,7 +477,9 @@ const MOTS_VOISINS = 2;                               // mots affichés en trans
 const APPUI_LONG_MS = 500;                            // appui long sur un mot = définition
 const DICO_CACHE_MAX = 500, DICO_DEFINITIONS_MAX = 5;
 const DEFAUTS = {
-  vitesse: 300, pivot: true, theme: 'auto',
+  vitesse: 300,          // vitesse du livre en cours de lecture
+  vitesseDefaut: null,   // vitesse de toute nouvelle lecture (test de l'accueil, Réglages) ; reprend « vitesse » si absente
+  pivot: true, theme: 'auto',
   tailleMot: 100,        // % de la taille d'origine du mot en lecture
   tailleTexte: 1.12,     // rem, texte complet en pause
   avertiVeille: false,
@@ -431,6 +499,8 @@ const DEFAUTS = {
   objectif: 0,           // minutes de lecture par jour (0 = pas d'objectif)
   odClient: '',          // identifiant d'application Microsoft (sinon celui de onedrive.json)
   odDossier: '',         // dossier de la bibliothèque dans OneDrive (sinon le chemin par défaut)
+  accueilFait: false,    // écran d'accueil (test de vitesse) déjà passé
+  profilLecteur: null,   // profil choisi à l'accueil : occasionnel, regulier, grand
 };
 const PAUSE_YEUX_S = 20;
 const RECHERCHE_MAX = 100;
@@ -440,9 +510,12 @@ const $ = id => document.getElementById(id);
 
 // ---------- Préférences locales ----------
 const prefs = Object.assign({}, DEFAUTS, lireLocal('lc:prefs') || {});
+if (prefs.vitesseDefaut == null) prefs.vitesseDefaut = prefs.vitesse;
 function lireLocal(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
 function ecrireLocal(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} }
-function sauverPrefs() { ecrireLocal('lc:prefs', prefs); }
+// Pendant un test (accueil, calibrage), certains réglages sont remplacés pour un temps : on enregistre les vrais.
+let prefsMasquees = null;
+function sauverPrefs() { ecrireLocal('lc:prefs', prefsMasquees ? { ...prefs, ...prefsMasquees } : prefs); }
 function appliquerTailles() {
   document.documentElement.style.setProperty('--echelle-mot', prefs.tailleMot / 100);
   document.documentElement.style.setProperty('--taille-texte', prefs.tailleTexte + 'rem');
@@ -1244,7 +1317,7 @@ function debutPhrase(L, j) { return j <= 0 || L.debutBloc[j] || finPhrase(L.mots
 // ---------- Lecteur ----------
 const E = { L: null, i: 0, joue: false, minuteur: null, prochain: 0, source: null, nom: '', derniereSauvegarde: 0, fenetre: null,
   positionChoisie: false, rampe: 0, mode: 'mot', ligneGuide: null, finGroupe: 1, termine: null,
-  marques: [], session: null, tJeu: null, actifYeux: 0, surFin: null };
+  marques: [], session: null, tJeu: null, actifYeux: 0, surFin: null, bvTest: false };
 
 function demarrerLecteur(L, source, nom, prog) {
   terminerSession();
@@ -1254,7 +1327,9 @@ function demarrerLecteur(L, source, nom, prog) {
   if (prog && prog.mot) E.i = recaler(prog.mot);
   E.marques = prog && prog.marques ? prog.marques.map(m => ({ ...m, mot: recaler(m.mot) })) : [];
   $('lecteur').classList.toggle('test', source.type === 'test');
+  // Un livre déjà commencé garde sa propre vitesse ; un nouveau livre part de la vitesse par défaut.
   if (prog && prog.vitesse) prefs.vitesse = prog.vitesse;
+  else if (source.type !== 'test') prefs.vitesse = prefs.vitesseDefaut;
   E.mode = prog && prog.mode === 'guide' ? 'guide' : 'mot';
   $('modeLecture').value = E.mode;
   $('vitesse').value = prefs.vitesse;
@@ -1971,14 +2046,14 @@ function lireExtrait() {
   for (const p of t.texte.split('\n')) ajouterPara(L, p);
   preparer(L);
   // Réglages du test (non enregistrés) : vitesse en débit réel, sans retour en arrière.
-  CAL.prefs = { vitesse: prefs.vitesse, debitReel: prefs.debitReel, reculReprise: prefs.reculReprise, pauseYeux: prefs.pauseYeux };
+  CAL.prefs = prefsMasquees = { vitesse: prefs.vitesse, debitReel: prefs.debitReel, reculReprise: prefs.reculReprise, pauseYeux: prefs.pauseYeux };
   Object.assign(prefs, { vitesse: CAL.ordre[CAL.k], debitReel: true, reculReprise: 0, pauseYeux: false });
   demarrerLecteur(L, { type: 'test', cle: 'test' }, 'test', null);
   E.mode = 'mot';
   E.surFin = () => { restaurerPrefsTest(); poserQuestions(); };
   setTimeout(() => { if (E.L === L && !E.joue) jouer(); }, 800);
 }
-function restaurerPrefsTest() { if (CAL.prefs) { Object.assign(prefs, CAL.prefs); CAL.prefs = null; $('vitesse').value = prefs.vitesse; } }
+function restaurerPrefsTest() { if (CAL.prefs) { Object.assign(prefs, CAL.prefs); CAL.prefs = prefsMasquees = null; $('vitesse').value = prefs.vitesse; } }
 function abandonnerCalibrage() { restaurerPrefsTest(); $('lecteur').classList.remove('test'); afficherCalibrage(); }
 function poserQuestions() {
   E.L = null; $('lecteur').classList.remove('test');
@@ -2028,7 +2103,7 @@ function resultatsCalibrage() {
   c.append(el('p', 'Rappel : ce test mesure la mémoire immédiate du texte, pas la compréhension profonde. Le résultat est indicatif.', 'note'));
   if (conseil) {
     const b = el('button', `Utiliser ${conseil} mots/min en débit réel`, 'btn-principal');
-    b.onclick = () => { prefs.debitReel = true; $('debitReel').checked = true; changerVitesse(conseil); afficherToast('Vitesse réglée sur ' + conseil + ' mots/min (débit réel).'); };
+    b.onclick = () => { prefs.debitReel = true; $('debitReel').checked = true; changerVitesse(conseil); changerVitesseDefaut(conseil); afficherToast('Vitesse réglée sur ' + conseil + ' mots/min (débit réel).'); };
     c.append(b);
   }
   const autre = el('button', 'Retour au test'); autre.style.marginLeft = '8px'; autre.onclick = afficherCalibrage; c.append(autre);
@@ -2299,11 +2374,140 @@ async function odDeconnecter() {
   afficherAccueil();
 }
 
+// ---------- Accueil du premier lancement : test de vitesse ----------
+// Le test fait défiler une fable avec le moteur de lecture habituel (mêmes pauses de ponctuation, mêmes mots longs).
+const BV_PROFILS = [
+  { cle: 'occasionnel', nom: 'Lecteur occasionnel', detail: 'Environ un livre par an', vitesse: 180 },
+  { cle: 'regulier', nom: 'Lecteur régulier', detail: 'Quelques livres par an', vitesse: 250 },
+  { cle: 'grand', nom: 'Grand lecteur', detail: 'Beaucoup de livres par an', vitesse: 320 },
+];
+const BV_VITESSE_PASSER = 250;            // « Passer » : vitesse appliquée sans test
+const BV_MIN = 100, BV_MAX = 700;         // bornes des ajustements (mots/min)
+const BV_AJUSTEMENT = 0.10;               // « Plus vite » / « Plus lentement » : ±10 %
+const BV_ARRONDI = 5;                     // arrondi à 5 mots/min
+const BV_DECOMPTE_MS = 900;               // durée de chaque chiffre du compte à rebours
+// Jean de La Fontaine, « Le Corbeau et le Renard », Fables, livre I (1668) — domaine public
+const BV_FABLE = `Maître Corbeau, sur un arbre perché,
+Tenait en son bec un fromage.
+Maître Renard, par l'odeur alléché,
+Lui tint à peu près ce langage :
+« Hé ! bonjour, Monsieur du Corbeau.
+Que vous êtes joli ! que vous me semblez beau !
+Sans mentir, si votre ramage
+Se rapporte à votre plumage,
+Vous êtes le Phénix des hôtes de ces bois. »
+À ces mots le Corbeau ne se sent pas de joie ;
+Et pour montrer sa belle voix,
+Il ouvre un large bec, laisse tomber sa proie.
+Le Renard s'en saisit, et dit : « Mon bon Monsieur,
+Apprenez que tout flatteur
+Vit aux dépens de celui qui l'écoute :
+Cette leçon vaut bien un fromage, sans doute. »
+Le Corbeau, honteux et confus,
+Jura, mais un peu tard, qu'on ne l'y prendrait plus.`;
+const BV = { vitesse: BV_VITESSE_PASSER, profil: null, prefs: null, ajuste: false, minuteur: null };
+const bvArrondir = v => Math.max(BV_MIN, Math.min(BV_MAX, Math.round(v / BV_ARRONDI) * BV_ARRONDI));
+
+function bvEtape(id) {
+  for (const e of document.querySelectorAll('#bienvenue .bv-etape')) { e.classList.toggle('cache', e.id !== id); e.classList.remove('entree'); }
+  const e = $(id); void e.offsetWidth;
+  if (id !== 'bvOuverture') e.classList.add('entree');
+  $('bienvenue').scrollTop = 0;
+}
+// Premier lancement : depuis l'ouverture (fondus). Depuis les Réglages : directement au choix du profil.
+function ouvrirBienvenue(depuisReglages) {
+  if (E.joue) pause();
+  clearTimeout(BV.minuteur);
+  $('bienvenue').classList.remove('cache');
+  if (depuisReglages) return bvEtape('bvProfil');
+  const o = $('bvOuverture'); o.classList.remove('anime'); void o.offsetWidth; o.classList.add('anime');
+  bvEtape('bvOuverture');
+}
+function fermerBienvenue() { $('bienvenue').classList.add('cache'); }
+// Enregistre la vitesse comme vitesse de toute nouvelle lecture (les livres déjà commencés gardent la leur).
+function bvTerminer(vitesse, profil) {
+  changerVitesseDefaut(vitesse);
+  if (!E.L) { prefs.vitesse = vitesse; $('vitesse').value = vitesse; }
+  if (profil) prefs.profilLecteur = profil;
+  prefs.accueilFait = true;
+  sauverPrefs();
+  fermerBienvenue();
+  afficherToast('Vitesse de lecture : ' + vitesse + ' mots par minute.');
+}
+function bvChoisirProfil(p) { BV.profil = p.cle; BV.vitesse = p.vitesse; BV.ajuste = false; bvLancerTest(); }
+function bvLancerTest() {
+  bvEtape('bvDecompte');
+  const c = $('bvChiffre');
+  let n = 3;
+  const tic = () => {
+    if (n === 0) return bvLire();
+    c.textContent = n; c.classList.remove('bat'); void c.offsetWidth; c.classList.add('bat');
+    n--; BV.minuteur = setTimeout(tic, BV_DECOMPTE_MS);
+  };
+  tic();
+}
+function bvLire() {
+  const L = lireTexteBrut(BV_FABLE);
+  L.titre = 'Le Corbeau et le Renard';
+  preparer(L);
+  // Réglages du test (non enregistrés) : vitesse du profil, sans retour en arrière ni pause pour les yeux.
+  BV.prefs = prefsMasquees = { vitesse: prefs.vitesse, reculReprise: prefs.reculReprise, pauseYeux: prefs.pauseYeux };
+  Object.assign(prefs, { vitesse: BV.vitesse, reculReprise: 0, pauseYeux: false });
+  fermerBienvenue();
+  $('lecteur').classList.add('accueil');
+  E.bvTest = true;
+  demarrerLecteur(L, { type: 'test', cle: 'accueil' }, 'fable', null);
+  E.mode = 'mot';
+  E.surFin = bvFinLecture;
+  setTimeout(() => { if (E.L === L && !E.joue) jouer(); }, 300);
+}
+function bvQuitterLecture() {
+  if (BV.prefs) { Object.assign(prefs, BV.prefs); BV.prefs = prefsMasquees = null; }
+  E.bvTest = false;
+  $('lecteur').classList.remove('accueil', 'test');
+  E.L = null;
+  montrerPage('accueil');
+}
+function bvFinLecture() {
+  bvQuitterLecture();
+  $('bienvenue').classList.remove('cache');
+  bvAfficherValidation();
+}
+function bvAfficherValidation() {
+  bvEtape('bvValidation');
+  $('bvVitesse').textContent = BV.vitesse + ' mots par minute';
+  const zone = $('bvBoutons');
+  zone.replaceChildren();
+  const bouton = (texte, classe, action, inactif) => { const b = el('button', texte, classe); b.onclick = action; b.disabled = !!inactif; zone.append(b); return b; };
+  if (!BV.ajuste) bouton('Oui, c\'est parfait', 'bv-principal', () => bvTerminer(BV.vitesse, BV.profil));
+  else {
+    bouton('Valider ' + BV.vitesse + ' mpm', 'bv-principal', () => bvTerminer(BV.vitesse, BV.profil));
+    bouton('Refaire le test à ' + BV.vitesse + ' mpm', 'bv-secondaire', bvLancerTest);
+  }
+  bouton('Plus vite', 'bv-secondaire', () => bvAjuster(+1), BV.vitesse >= BV_MAX);
+  bouton('Plus lentement', 'bv-secondaire', () => bvAjuster(-1), BV.vitesse <= BV_MIN);
+  $('bvBorne').textContent = BV.vitesse >= BV_MAX ? 'Vitesse maximale : ' + BV_MAX + ' mots par minute.'
+    : BV.vitesse <= BV_MIN ? 'Vitesse minimale : ' + BV_MIN + ' mots par minute.' : '';
+}
+function bvAjuster(sens) {
+  BV.vitesse = bvArrondir(BV.vitesse * (1 + sens * BV_AJUSTEMENT));
+  BV.ajuste = true;
+  bvAfficherValidation();
+}
+for (const p of BV_PROFILS) {
+  const b = el('button', null, 'bv-choix');
+  b.append(el('b', p.nom), el('small', p.detail));
+  b.onclick = () => bvChoisirProfil(p);
+  $('bvProfils').append(b);
+}
+$('bvCommencer').onclick = () => bvEtape('bvProfil');
+$('bvPasser').onclick = () => bvTerminer(BV_VITESSE_PASSER, null);
+$('refaireTest').onclick = () => ouvrirBienvenue(true);
+
 // ---------- Événements ----------
 function changerVitesse(v) {
   prefs.vitesse = Math.max(20, Math.min(2000, Math.round(v) || 300));
   $('vitesse').value = prefs.vitesse;
-  $('vitesseDefaut').value = prefs.vitesse;
   sauverPrefs();
   if (E.L) majEntete();
 }
@@ -2355,6 +2559,7 @@ $('voile').onclick = fermerPanneau;
 $('phrasePrec').onclick = phrasePrec;
 $('phraseSuiv').onclick = phraseSuiv;
 $('retour').onclick = () => {
+  if (E.bvTest) { pause(false); libererEcran(); bvQuitterLecture(); $('bienvenue').classList.remove('cache'); bvEtape('bvProfil'); return; }
   pause(); libererEcran(); terminerSession();
   const test = E.source && E.source.type === 'test';
   E.L = null;
@@ -2464,7 +2669,12 @@ $('fichier').onchange = e => { if (e.target.files[0]) ouvrirFichier(e.target.fil
 ['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('accueil').classList.add('survol'); }));
 ['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('accueil').classList.remove('survol'); }));
 document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f && !$('accueil').classList.contains('cache')) ouvrirFichier(f); });
-$('vitesseDefaut').onchange = e => changerVitesse(+e.target.value);
+function changerVitesseDefaut(v) {
+  prefs.vitesseDefaut = Math.max(20, Math.min(2000, Math.round(v) || 300));
+  $('vitesseDefaut').value = prefs.vitesseDefaut;
+  sauverPrefs();
+}
+$('vitesseDefaut').onchange = e => changerVitesseDefaut(+e.target.value);
 $('pivotDefaut').onchange = e => { prefs.pivot = e.target.checked; sauverPrefs(); };
 $('theme').onclick = () => { prefs.theme = { auto: 'light', light: 'dark', dark: 'auto' }[prefs.theme]; sauverPrefs(); appliquerTheme(); };
 $('enregistrerDossier').onclick = async () => {
@@ -2476,7 +2686,7 @@ $('enregistrerDossier').onclick = async () => {
 };
 
 (async () => {
-  $('vitesseDefaut').value = prefs.vitesse;
+  $('vitesseDefaut').value = prefs.vitesseDefaut;
   $('pivotDefaut').checked = prefs.pivot;
   lierReglage('tailleMot', v => v + ' %', appliquerTailles);
   lierReglage('tailleTexte', v => v.toFixed(2).replace('.', ',') + ' rem', appliquerTailles);
@@ -2509,10 +2719,14 @@ $('enregistrerDossier').onclick = async () => {
   await afficherAccueil();
   // Arrivée par « Partager » → Kdence (Android) : paramètres titre / texte / adresse.
   const q = new URLSearchParams(location.search);
-  if (q.has('texte') || q.has('adresse') || q.has('titre')) {
+  const partage = q.has('texte') || q.has('adresse') || q.has('titre');
+  if (partage) {
     history.replaceState(null, '', location.pathname);
     traiterPartage(q.get('titre'), q.get('texte'), q.get('adresse'));
   }
+  // Écran d'accueil et test de vitesse : au premier lancement, ou à la demande avec l'adresse « …?accueil » (essais).
+  if (q.has('accueil')) history.replaceState(null, '', location.pathname);
+  if (q.has('accueil') || (!prefs.accueilFait && !partage)) ouvrirBienvenue(false);
 })();
 </script>
 </body>
